@@ -8,4 +8,27 @@
 #define PLAYER                           2        /* BMP  */
 
 
+//define the structure of the sprite
+typedef struct SPRITE{
+    int dir, alive;
+    int x,y;
+    int width,height;
+    int xspeed,yspeed;
+    int xdelay,ydelay;
+    int xcount,ycount;
+    int curframe,maxframe,animdir;
+    int framecount,framedelay;
+    int startFrame; //Used to manipulate where the animation will start (Allows for multiple animations in one sheet)
+}SPRITE;
 
+/***Global variables***/
+
+//Art/sprite variables
+BITMAP *player_image[16];//This limits max frames
+BITMAP *temp;
+SPRITE *player;
+BITMAP *buffer;	
+
+
+//Flags
+int c, n, i, f, j;
