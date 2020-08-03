@@ -6,7 +6,11 @@
 #define GAMEMAP                          0        /* FMP  */
 #define GAMEPAL                          1        /* PAL  */
 #define PLAYER                           2        /* BMP  */
-
+/***Don't touch above***/
+#define MODE GFX_AUTODETECT_WINDOWED
+#define WIDTH 640
+#define HEIGHT 480
+#define JUMPIT 1600
 
 //define the structure of the sprite
 typedef struct SPRITE{
@@ -30,5 +34,7 @@ SPRITE *player;
 BITMAP *buffer;	
 
 
-//Flags
-int c, n, i, f, j;
+//Integer variables
+int c, n, i, f, j; //index numbers
+int oldpy, oldpx, mapxoff, mapyoff; //Misc
+int quit, facing, jump; //Global flags/tracking numbers
