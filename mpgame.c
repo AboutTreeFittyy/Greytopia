@@ -10,6 +10,17 @@ BITMAP *grabFrame(BITMAP *source, int width, int height, int startx, int starty,
     blit(source,temp,x,y,0,0,width,height);
     return temp;
 }
+//Turns on an animation specified for the given sprite
+void playAnim(SPRITE *spr, int start, int endFrame){
+    //make sure animation not already in progress
+    if(spr->startFrame != start ||  spr->animdir ==  0){
+		spr->startFrame = start;
+		spr->curframe = start;
+	    spr->maxframe = endFrame;
+	    //spr->framedelay = 5;//might be useful later
+	    spr->animdir = 1;	
+	}	
+}
 /*Loads the sprites into their struct from their bitmap files*/
 void loadLevel(char * map){   
 	//load the map
@@ -21,7 +32,7 @@ void loadLevel(char * map){
 	//load vlad playable character sprite
     temp = load_bitmap("images/vlad.bmp", NULL);
     for (n=0; n<16; n++){
-		player_image[n] = grabFrame(temp,64,96,0,0,9,n);
+		player_image[n] = grabFrame(temp,64,96,0,0,4,n);
     }
     destroy_bitmap(temp);		
     player = malloc(sizeof(SPRITE));
@@ -39,10 +50,14 @@ void loadLevel(char * map){
     player->maxframe = 3;
     player->framecount = 0;
     player->framedelay = 12;
-    player->animdir = 1;
+    player->animdir = 0;
     player->startFrame = 0;
     player->alive = 1;
 }
+//wait for callback
+/*void rest1(void){
+	resting++;
+}*/
 /*Collision function*/
 int collided(int x, int y){
 	BLKSTR *blockdata;
@@ -55,25 +70,42 @@ void getInput(){
 	if(key[KEY_ESC]){
 		quit = 1;
 	}
-	if (key[KEY_RIGHT]){ 
+	if (key[KEY_D]){ //Move right
         facing = 1; 
-        player->x+=2; 
-        if (++player->framecount > player->framedelay){
-            player->framecount=0;
-            if (++player->curframe > player->maxframe)
-                player->curframe=1;
-        }
-    }else if (key[KEY_LEFT]){ 
+        player->xspeed=PLAYERSPEED;
+        playAnim(player, 0, 3);
+        firetime = -1;//use to tell if moved before firing
+    }else if (key[KEY_A]){ //Move left
         facing = 0; 
-        player->x-=2; 
-        if (++player->framecount > player->framedelay){
-            player->framecount=0;
-            if (++player->curframe > player->maxframe){
-            	 player->curframe=1;
-			}                   
-        }
+        player->xspeed=-PLAYERSPEED;
+        playAnim(player, 0, 3);
+        firetime = -1;//use to tell if moved before firing
+    }else if (key[KEY_W]){
+       
+		
+		if(firetime == -1){//must have moved, reset firing time
+			player->xspeed = 0;
+			playAnim(player, 8, 11);
+			firetime = clock();
+		}else if(firetime + 1000 > clock()){//Check if sprite readied to fire given enough time
+			//fire
+		}
+		
+		/*for(i = 0; i < 4; i++){//make sure max number of projectiles not fired already on screen
+			if(hotstuff[i]->yspeed == 0 && clock() > cooldown){
+				cooldown = clock() + 1000;
+				play_sample(sounds[2], volume, pan, pitch-400, FALSE);//play flexsound effect (sounds weird with higher pitch so its decreased)
+				player[0]->xspeed = 0;
+		        playAnim(player[0], 8, 15);
+		        hotstuff[i]->x = player[0]->x+(player[0]->width/2);//center on player
+		    	hotstuff[i]->y = player[0]->y;
+		    	hotstuff[i]->yspeed = -5;//have it travel up now
+		    	hotstuff[i]->framedelay = clock();//unused variable for this, use to track time it was sent
+			}
+		}*/
     }else {
-		player->curframe=0;
+		player->animdir=0;
+		player->xspeed=0;
 	}
 	//handle jumping
     if (jump==JUMPIT){ 
@@ -121,7 +153,35 @@ void updateMap(){
 	MapDrawFG(buffer, mapxoff, mapyoff, 0, 0, WIDTH-1, HEIGHT-1, 0);
 }
 
-void updateSprites(){
+//updates the properties of the specified sprite
+void updateSprite(SPRITE *spr){
+    //update x position
+    if (++spr->xcount > spr->xdelay){
+        spr->xcount = 0;
+        spr->x += spr->xspeed;
+    }
+    //update y position
+    if (++spr->ycount > spr->ydelay){
+        spr->ycount = 0;
+        spr->y += spr->yspeed;
+    }
+    //update frame based on animdir
+    if (++spr->framecount > spr->framedelay){
+        spr->framecount = 0;
+        if (spr->animdir == -1){
+            if (--spr->curframe < spr->startFrame){
+                spr->curframe = spr->maxframe;
+            }
+        }
+        else if (spr->animdir == 1){
+            if (++spr->curframe > spr->maxframe){
+                spr->curframe = spr->startFrame;
+            }
+        }
+    }
+}
+
+void drawSprites(){
 	//draw the player's sprite
 	if(facing){
 		draw_sprite(buffer, player_image[player->curframe], (player->x-mapxoff), (player->y-mapyoff+1));
@@ -149,9 +209,10 @@ void gameLoop(){
         if(collided(player->x + player->width, player->y + player->height)){
         	player->x = oldpx; 
 		}               
-    }		
+    }	
+	updateSprite(player);	
     updateMap();
-    updateSprites();
+    drawSprites();
     //blit the double buffer 
 	vsync();
     acquire_screen();
@@ -160,7 +221,7 @@ void gameLoop(){
 }
 /*Main function, handles initial loading. Passes on taks to be handled in title/game loop functions. When quit, destroys allocated memory.*/
 int main(void){
-    facing = 0, jump = JUMPIT, quit = 0;
+    facing = 0, jump = JUMPIT, quit = 0, firetime = -1;
 	allegro_init();	
 	install_timer();
 	install_keyboard();
@@ -169,6 +230,11 @@ int main(void){
         printf(".GFX_ERROR: ");
 		allegro_message(allegro_error);
         return;
+    }
+    //install sound
+    if (install_sound(DIGI_AUTODETECT, MIDI_NONE, "")){
+        allegro_message("Error initializing sound system");
+        return 1;
     }
 	printf(".LOADING");
 	
