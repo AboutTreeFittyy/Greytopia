@@ -165,7 +165,11 @@ int main(void){
 	install_timer();
 	install_keyboard();
 	set_color_depth(16);
-	set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0);
+    if(set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0)) {
+        printf(".GFX_ERROR: ");
+		allegro_message(allegro_error);
+        return;
+    }
 	printf(".LOADING");
 	
 //	printf("SCREEN_CODE: %d", screen);//NO idea why but the screen doesn't work sometimes causing the map to fail loading. Using this line helps for some reason

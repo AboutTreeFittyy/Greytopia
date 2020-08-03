@@ -8,8 +8,8 @@
 #define PLAYER                           2        /* BMP  */
 /***Don't touch above***/
 #define MODE GFX_AUTODETECT_WINDOWED
-#define WIDTH 640
-#define HEIGHT 480
+#define WIDTH 4000
+#define HEIGHT 640
 #define JUMPIT 1600
 
 //define the structure of the sprite
