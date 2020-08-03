@@ -11,9 +11,13 @@ BITMAP *grabFrame(BITMAP *source, int width, int height, int startx, int starty,
     return temp;
 }
 /*Loads the sprites into their struct from their bitmap files*/
-void loadLevel(char* map){   
+void loadLevel(char * map){   
 	//load the map
-	MapLoad(map);
+	n = MapLoad(map);
+	if(n){
+		printf("Error Loading Map Code: %d", n);
+		exit(1);
+	}
 	//load vlad playable character sprite
     temp = load_bitmap("images/vlad.bmp", NULL);
     for (n=0; n<16; n++){
@@ -41,8 +45,8 @@ void loadLevel(char* map){
 }
 /*Collision function*/
 int collided(int x, int y){
-    BLKSTR *blockdata;
-	blockdata = MapGetBlock(x/mapblockwidth, y/mapblockheight);
+	BLKSTR *blockdata;
+	blockdata = MapGetBlock(x/mapblockwidth, y/mapblockheight);	
 	return blockdata->tl;
 }
 /*Input handling function, checks pressed key to see what action to take depending on set flags at time*/
@@ -131,15 +135,15 @@ void titleLoop(){
 }
 /*The main loop run when game in progress, handles flow of calls and checks as well as updating screen*/
 void gameLoop(){
-	//oldpy = player->y; 
-    //oldpx = player->x;
+	oldpy = player->y; 
+    oldpx = player->x;
     if(keypressed()){ //Get keyboard input when key(s) pressed
     	getInput();
 	}    
     //check for collided with foreground tiles
-	if(!facing){ 
-        if(collided(player->x, player->y + player->height)){
-        	player->x = oldpx; 
+	if(!facing){	 
+        if(collided(player->x, player->y + player->height)){	
+			player->x = oldpx; 
 		}                
     }else{ 
         if(collided(player->x + player->width, player->y + player->height)){
@@ -163,9 +167,12 @@ int main(void){
 	set_color_depth(16);
 	set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0);
 	printf(".LOADING");
+	
+//	printf("SCREEN_CODE: %d", screen);//NO idea why but the screen doesn't work sometimes causing the map to fail loading. Using this line helps for some reason
+	
 	/***This is set up this way so that multiple levels can be implemented mroe easily
 		Try having level select from title screen or next map loaded when previous finished***/	
-	loadLevel("images/test.FMP");//loads the specified level and the sprites with it  
+	loadLevel("images/tradition_bg/map.FMP");//loads the specified level and the sprites with it  
 	printf(".LOADED");  
     //create the double buffer
 	buffer = create_bitmap(WIDTH, HEIGHT);
