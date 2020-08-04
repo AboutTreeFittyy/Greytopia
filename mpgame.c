@@ -69,57 +69,99 @@ void getInput(){
 		quit = 1;
 	}
 	if(player_anim == 1 && player->curframe >= pa_start && player->curframe < pa_end){		
-		/*printf("-%d",player->curframe);
-		if(player->curframe == pa_end-1){
-			printf("HEre");
-			player_anim = 0;
-			player->animdir=0;
-		}else{*/
-			
-			playAnim(player, pa_start, pa_end);
-		//}
+		playAnim(player, pa_start, pa_end);
 	}
-	if (key[KEY_D]){ //Move right
+	
+	
+	if(key[KEY_SPACE] && jump == JUMPIT){//Handle jumping
+    	jump = 30;
+	    if(key[KEY_SPACE] && key[KEY_W]){//Jump while shooting	    	
+	    	playAnim(player, 16, 19);
+	    	player_anim = 1;
+	    	pa_start = 16;
+	    	pa_end = 19;
+		}else if(key[KEY_SPACE] && key[KEY_S]){//Jump while using paint brush   
+			playAnim(player, 28, 31);
+	    	player_anim = 1;
+	    	pa_start = 28;
+	    	pa_end = 31;
+		}else if (key[KEY_D]){ //Move right
+	        facing = 1; 
+	        player->xspeed=PLAYERSPEED;
+	        playAnim(player, 4, 7);
+	        player_anim = 1;
+		   	pa_start = 4;
+		    pa_end = 7;
+	        firetime = -1;//use to tell if moved before firing
+	    }else if (key[KEY_A]){ //Move left
+	        facing = 0; 
+	        player->xspeed=-PLAYERSPEED;
+	        playAnim(player, 4, 7);
+	        player_anim = 1;
+		    pa_start = 0;
+		    pa_end = 3;
+	        firetime = -1;//use to tell if moved before firing
+	    }else if(key[KEY_SPACE]){//Just jump
+			playAnim(player, 4, 7);
+	    	player_anim = 1;
+	    	pa_start = 4;
+	    	pa_end = 7;
+		}
+	}else if (key[KEY_D]){ //Move right
         facing = 1; 
         player->xspeed=PLAYERSPEED;
-        playAnim(player, 0, 3);
-        player_anim = 1;
-	   	pa_start = 0;
-	    pa_end = 3;
+        if(jump == JUMPIT){//Not jumping so normal animation
+			playAnim(player, 0, 3);
+	        player_anim = 1;
+		   	pa_start = 0;
+		    pa_end = 3;
+		}else{//continues playing jump animation after jumping
+			playAnim(player, 4, 7);
+	        player_anim = 1;
+		   	pa_start = 4;
+		    pa_end = 7;
+		}
         firetime = -1;//use to tell if moved before firing
     }else if (key[KEY_A]){ //Move left
         facing = 0; 
         player->xspeed=-PLAYERSPEED;
-        playAnim(player, 0, 3);
-        player_anim = 1;
-	    pa_start = 0;
-	    pa_end = 3;
+        if(jump == JUMPIT){//Not jumping so normal animation
+			playAnim(player, 0, 3);
+	        player_anim = 1;
+		   	pa_start = 0;
+		    pa_end = 3;
+		}else{//continues playing jump animation after jumping
+			playAnim(player, 4, 7);
+	        player_anim = 1;
+		   	pa_start = 4;
+		    pa_end = 7;
+		}
         firetime = -1;//use to tell if moved before firing
-    }else if (key[KEY_W]){
-		if(firetime == -1){//must have moved, reset firing time
+    }else if (key[KEY_W] && jump == JUMPIT){
+		//if(firetime == -1){//must have moved, reset firing time
 			player->xspeed = 0;
 			playAnim(player, 8, 11);
+			player_anim = 1;
+		    pa_start = 8;
+		    pa_end = 11;
 			firetime = clock();
-		}else if(firetime + 1000 > clock()){//Check if sprite readied to fire given enough time
+		//}else if(firetime + 1000 > clock()){//Check if sprite readied to fire given enough time
 			//fire
-		}
+		//s}
+    }else if (key[KEY_S] && jump == JUMPIT){//Use paint brush
+		player->xspeed = 0;
+		playAnim(player, 20, 23);
+		player_anim = 1;
+	    pa_start = 20;
+	    pa_end = 23;
     }else {
-		//player->animdir=0;
 		player->xspeed=0;
-	}
-	
-	//handle jumping
+	}	
+	//More stuff for handling Jumping
     if(jump==JUMPIT){ 
         if(!collided(player->x + player->width/2, player->y + player->height + 5)){
         	jump = 0; 
-		}
-	    if(key[KEY_SPACE]){
-	    	jump = 30;
-	    	playAnim(player, 4, 7);
-	    	player_anim = 1;
-	    	pa_start = 4;
-	    	pa_end = 7;
-		}                
+		}		              
     }else{
         player->y -= jump/3; 
         jump--; 
@@ -198,8 +240,7 @@ void titleLoop(){
 	
 }
 /*The main loop run when game in progress, handles flow of calls and checks as well as updating screen*/
-void gameLoop(){
-	
+void gameLoop(){	
     if(keypressed()){ //Get keyboard input when key(s) pressed
     	getInput();
 	}    
