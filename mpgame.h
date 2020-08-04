@@ -37,6 +37,7 @@ BITMAP *temp;
 SPRITE *proj_paint[6];//player projectiles
 SPRITE *player;
 SPRITE *prime;
+SPRITE *tempSprite;
 BITMAP *buffer;	
 
 

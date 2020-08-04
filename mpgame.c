@@ -117,6 +117,54 @@ int collided(int x, int y){
 	blockdata = MapGetBlock(x/mapblockwidth, y/mapblockheight);	
 	return blockdata->tl;
 }
+//checks if coordinates are inside a given hitbox, return 1 if inside
+int inside(int x,int y,int left,int top,int right,int bottom) {
+	if (x > left && x < right && y > top && y < bottom){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+//checks two sprites for collisions
+int collide(SPRITE *first, SPRITE *second, int border) {
+	//get width/height of both sprites 
+	int width1 = first->x + first->width; 
+	int height1 = first->y + first->height;
+	int width2 = second->x + second->width; 
+	int height2 = second->y + second->height;
+	//see if corners of first are inside second boundary 
+	if (inside(first->x, first->y, second->x + border, second->y + border, width2 - border, height2 - border)){
+		return 1;
+	}
+	if (inside(first->x, height1, second->x + border, second->y + border, width2 - border, height2 - border)){
+		return 1;
+	}
+	if (inside(width1, first->y, second->x + border, second->y + border, width2 - border, height2 - border)){ 
+		return 1;
+	}
+	if (inside(width1, height1, second->x + border, second->y + border, width2 - border, height2 - border)){
+		return 1;
+	}
+	return 0;//no collision return 0
+}
+/*Check collisions for enemy with attack*/
+void checkMelee(int x1, int x2, int y1, int y2){
+	switch(mapName){
+		case TRADITION:
+			tempSprite->x = x1;
+		    tempSprite->y = y1;
+		    tempSprite->width = x2 - x1;
+		    tempSprite->height = y1 - y2;
+		    if(collide(tempSprite, prime, 0)){
+		    	printf(".MELEE_HIT");
+			}else{
+				//printf("MELEE_MISS");
+			}
+			break;
+	}
+}
+
 /*Input handling function, checks pressed key to see what action to take depending on set flags at time*/
 void getInput(){
 	//Check for quit game
@@ -180,8 +228,7 @@ void getInput(){
 		}else{//turn fired flag off since animation restarted
 			fired=0;
 		}
-    }else if (key[KEY_S]){//Use paint brush
-		
+    }else if (key[KEY_S]){//Use paint brush		
 		if(jump == JUMPIT && key[KEY_D]){
 	    	player->xspeed = PLAYERSPEED;
 			playAnim(player, 24, 27);			
@@ -200,9 +247,9 @@ void getInput(){
 		}
 		if(player->curframe == n && fired == 0){				
 			if(facing == 0){//melee left
-				
+				checkMelee(player->x-40, player->x, player->y - 10, player->y - 60);
 			}else{//melee right
-				
+				checkMelee(player->x+player->width, player->x+player->width+40, player->y - 10, player->y - 60);
 			}
 			fired = 1;
 		}else if(player->curframe == n){//keep fired flag on while on this frame
@@ -379,6 +426,7 @@ void gameLoop(){
 int main(void){
     facing = 0, jump = JUMPIT, quit = 0, firetime = -1, player_anim = 0, pa_start = 0, pa_end = 0;
 	fired = 0, cur_proj = 0;
+	tempSprite = malloc(sizeof(SPRITE));
 	allegro_init();	
 	install_timer();
 	install_keyboard();
