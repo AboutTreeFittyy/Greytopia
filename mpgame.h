@@ -29,7 +29,7 @@ typedef struct SPRITE{
 /***Global variables***/
 
 //Art/sprite variables
-BITMAP *player_image[16];//This limits max frames
+BITMAP *player_image[32];//This limits max frames
 BITMAP *temp;
 SPRITE *player;
 BITMAP *buffer;	
@@ -37,5 +37,5 @@ BITMAP *buffer;
 
 //Integer variables
 int c, n, i, f, j; //index numbers
-int oldpy, oldpx, mapxoff, mapyoff; //Misc
-int quit, facing, jump, resting, firetime; //Global flags/tracking numbers
+int oldpy, oldpx, mapxoff, mapyoff, pa_start, pa_end; //Misc
+int quit, facing, jump, resting, firetime, player_anim; //Global flags/tracking numbers

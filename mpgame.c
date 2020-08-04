@@ -17,7 +17,6 @@ void playAnim(SPRITE *spr, int start, int endFrame){
 		spr->startFrame = start;
 		spr->curframe = start;
 	    spr->maxframe = endFrame;
-	    //spr->framedelay = 5;//might be useful later
 	    spr->animdir = 1;	
 	}	
 }
@@ -30,8 +29,8 @@ void loadLevel(char * map){
 		exit(1);
 	}
 	//load vlad playable character sprite
-    temp = load_bitmap("images/vlad.bmp", NULL);
-    for (n=0; n<16; n++){
+    temp = load_bitmap("images/vlad_all.bmp", NULL);
+    for (n=0; n<32; n++){
 		player_image[n] = grabFrame(temp,64,96,0,0,4,n);
     }
     destroy_bitmap(temp);		
@@ -54,15 +53,14 @@ void loadLevel(char * map){
     player->startFrame = 0;
     player->alive = 1;
 }
-//wait for callback
-/*void rest1(void){
-	resting++;
-}*/
 /*Collision function*/
 int collided(int x, int y){
 	BLKSTR *blockdata;
 	blockdata = MapGetBlock(x/mapblockwidth, y/mapblockheight);	
 	return blockdata->tl;
+}
+void tryAnim(){
+	
 }
 /*Input handling function, checks pressed key to see what action to take depending on set flags at time*/
 void getInput(){
@@ -70,19 +68,34 @@ void getInput(){
 	if(key[KEY_ESC]){
 		quit = 1;
 	}
+	if(player_anim == 1 && player->curframe >= pa_start && player->curframe < pa_end){		
+		/*printf("-%d",player->curframe);
+		if(player->curframe == pa_end-1){
+			printf("HEre");
+			player_anim = 0;
+			player->animdir=0;
+		}else{*/
+			
+			playAnim(player, pa_start, pa_end);
+		//}
+	}
 	if (key[KEY_D]){ //Move right
         facing = 1; 
         player->xspeed=PLAYERSPEED;
         playAnim(player, 0, 3);
+        player_anim = 1;
+	   	pa_start = 0;
+	    pa_end = 3;
         firetime = -1;//use to tell if moved before firing
     }else if (key[KEY_A]){ //Move left
         facing = 0; 
         player->xspeed=-PLAYERSPEED;
         playAnim(player, 0, 3);
+        player_anim = 1;
+	    pa_start = 0;
+	    pa_end = 3;
         firetime = -1;//use to tell if moved before firing
     }else if (key[KEY_W]){
-       
-		
 		if(firetime == -1){//must have moved, reset firing time
 			player->xspeed = 0;
 			playAnim(player, 8, 11);
@@ -90,37 +103,28 @@ void getInput(){
 		}else if(firetime + 1000 > clock()){//Check if sprite readied to fire given enough time
 			//fire
 		}
-		
-		/*for(i = 0; i < 4; i++){//make sure max number of projectiles not fired already on screen
-			if(hotstuff[i]->yspeed == 0 && clock() > cooldown){
-				cooldown = clock() + 1000;
-				play_sample(sounds[2], volume, pan, pitch-400, FALSE);//play flexsound effect (sounds weird with higher pitch so its decreased)
-				player[0]->xspeed = 0;
-		        playAnim(player[0], 8, 15);
-		        hotstuff[i]->x = player[0]->x+(player[0]->width/2);//center on player
-		    	hotstuff[i]->y = player[0]->y;
-		    	hotstuff[i]->yspeed = -5;//have it travel up now
-		    	hotstuff[i]->framedelay = clock();//unused variable for this, use to track time it was sent
-			}
-		}*/
     }else {
-		player->animdir=0;
+		//player->animdir=0;
 		player->xspeed=0;
 	}
+	
 	//handle jumping
-    if (jump==JUMPIT){ 
-        if (!collided(player->x + player->width/2, player->y + player->height + 5)){
+    if(jump==JUMPIT){ 
+        if(!collided(player->x + player->width/2, player->y + player->height + 5)){
         	jump = 0; 
 		}
-	    if (key[KEY_SPACE]) {
+	    if(key[KEY_SPACE]){
 	    	jump = 30;
+	    	playAnim(player, 4, 7);
+	    	player_anim = 1;
+	    	pa_start = 4;
+	    	pa_end = 7;
 		}                
-    }
-    else{
+    }else{
         player->y -= jump/3; 
         jump--; 
     }
-	if (jump<0) { 
+	if(jump<0){ 
         if (collided(player->x + player->width/2, player->y + player->height)){ 
             jump = JUMPIT; 
             while (collided(player->x + player->width/2, player->y + player->height)){
@@ -195,11 +199,12 @@ void titleLoop(){
 }
 /*The main loop run when game in progress, handles flow of calls and checks as well as updating screen*/
 void gameLoop(){
-	oldpy = player->y; 
-    oldpx = player->x;
+	
     if(keypressed()){ //Get keyboard input when key(s) pressed
     	getInput();
 	}    
+	oldpy = player->y; 
+    oldpx = player->x;
     //check for collided with foreground tiles
 	if(!facing){	 
         if(collided(player->x, player->y + player->height)){	
@@ -211,6 +216,10 @@ void gameLoop(){
 		}               
     }	
 	updateSprite(player);	
+	if(player->curframe == pa_end){//Turn off animation that finished
+		player_anim = 0;
+		player->animdir=0;
+	}	
     updateMap();
     drawSprites();
     //blit the double buffer 
@@ -221,7 +230,7 @@ void gameLoop(){
 }
 /*Main function, handles initial loading. Passes on taks to be handled in title/game loop functions. When quit, destroys allocated memory.*/
 int main(void){
-    facing = 0, jump = JUMPIT, quit = 0, firetime = -1;
+    facing = 0, jump = JUMPIT, quit = 0, firetime = -1, player_anim = 0, pa_start = 0, pa_end = 0;
 	allegro_init();	
 	install_timer();
 	install_keyboard();
