@@ -17,7 +17,10 @@ void playAnim(SPRITE *spr, int start, int endFrame){
 		spr->startFrame = start;
 		spr->curframe = start;
 	    spr->maxframe = endFrame;
-	    spr->animdir = 1;	
+	    spr->animdir = 1;
+		pa_start = start;
+		pa_end = endFrame;
+		player_anim = 1;	
 	}	
 }
 /*Loads the sprites into their struct from their bitmap files*/
@@ -53,12 +56,12 @@ void loadLevel(char * map){
     player->alive = 1;
     //Load in paint projectiles
     temp = load_bitmap("images/grey_paint.bmp", NULL);
-    paint_image = grabFrame(temp,24,16,0,0,1,1);
+    paint_image = grabFrame(temp,24,16,0,0,1,0);
     destroy_bitmap(temp);		
     for(n=0;n<NUMPROJ;n++){
 		proj_paint[n] = malloc(sizeof(SPRITE));
-	    proj_paint[n]->x = 30;
-	    proj_paint[n]->y = 30;
+	    proj_paint[n]->x = -50;
+	    proj_paint[n]->y = -50;
 	    proj_paint[n]->width = paint_image->w;
 	    proj_paint[n]->height = paint_image->h;
 	    proj_paint[n]->xdelay = 1;
@@ -82,9 +85,6 @@ int collided(int x, int y){
 	blockdata = MapGetBlock(x/mapblockwidth, y/mapblockheight);	
 	return blockdata->tl;
 }
-void tryAnim(){
-	
-}
 /*Input handling function, checks pressed key to see what action to take depending on set flags at time*/
 void getInput(){
 	//Check for quit game
@@ -93,106 +93,47 @@ void getInput(){
 	}
 	if(player_anim == 1 && player->curframe >= pa_start && player->curframe < pa_end){		
 		playAnim(player, pa_start, pa_end);
-	}
-	
-	
+	}	
 	if(key[KEY_SPACE] && jump == JUMPIT){//Handle jumping
     	jump = 30;
 	    if(key[KEY_SPACE] && key[KEY_W]){//Jump while shooting	    	
 	    	playAnim(player, 16, 19);
-	    	player_anim = 1;
-	    	pa_start = 16;
-	    	pa_end = 19;
-	    	printf("1");
-	    	/*if(player->curframe == 18 && fired == 0){
-				printf("2");
-				if(cur_proj == NUMPROJ){//Max reached
-					cur_proj = 0;
-				}				
-				if(facing == 0){//shoot left
-					proj_paint[cur_proj]->x=player->x;
-					proj_paint[cur_proj]->y=player->y;
-					proj_paint[cur_proj]->xspeed=-6;
-				}else{//shoot right
-					proj_paint[cur_proj]->x=player->x;
-					proj_paint[cur_proj]->y=player->y;
-					proj_paint[cur_proj]->xspeed=6;
-				}
-				fired = 1;
-				cur_proj++;
-			}else if(player->curframe == 18){//keep fired flag on while on this frame
-				printf("3");
-				fired = 1;
-			}else{//turn fired flag off since animation restarted
-				printf("4");
-				fired=0;
-			}*/
 		}else if(key[KEY_SPACE] && key[KEY_S]){//Jump while using paint brush   
 			playAnim(player, 28, 31);
-	    	player_anim = 1;
-	    	pa_start = 28;
-	    	pa_end = 31;
 		}else if (key[KEY_D]){ //Move right
 	        facing = 1; 
 	        player->xspeed=PLAYERSPEED;
 	        playAnim(player, 4, 7);
-	        player_anim = 1;
-		   	pa_start = 4;
-		    pa_end = 7;
 	    }else if (key[KEY_A]){ //Move left
 	        facing = 0; 
 	        player->xspeed=-PLAYERSPEED;
 	        playAnim(player, 4, 7);
-	        player_anim = 1;
-		    pa_start = 0;
-		    pa_end = 3;
 	    }else if(key[KEY_SPACE]){//Just jump
 			playAnim(player, 4, 7);
-	    	player_anim = 1;
-	    	pa_start = 4;
-	    	pa_end = 7;
 		}
 	}else if (key[KEY_D]){ //Move right
         facing = 1; 
         player->xspeed=PLAYERSPEED;
         if(jump == JUMPIT){//Not jumping so normal animation
 			playAnim(player, 0, 3);
-	        player_anim = 1;
-		   	pa_start = 0;
-		    pa_end = 3;
 		}else{//continues playing jump animation after jumping
 			playAnim(player, 4, 7);
-	        player_anim = 1;
-		   	pa_start = 4;
-		    pa_end = 7;
 		}
     }else if (key[KEY_A]){ //Move left
         facing = 0; 
         player->xspeed=-PLAYERSPEED;
         if(jump == JUMPIT){//Not jumping so normal animation
 			playAnim(player, 0, 3);
-	        player_anim = 1;
-		   	pa_start = 0;
-		    pa_end = 3;
 		}else{//continues playing jump animation after jumping
 			playAnim(player, 4, 7);
-	        player_anim = 1;
-		   	pa_start = 4;
-		    pa_end = 7;
 		}
     }else if (key[KEY_W]){			
-	    player_anim = 1;
 		if(jump == JUMPIT){
 	    	player->xspeed = 0;
 			playAnim(player, 8, 11);			
-		    pa_start = 8;
-		    pa_end = 11;
 			n=10;
 		}else{
 			playAnim(player, 16, 19);
-	    	player_anim = 1;
-			pa_start = 16;
-	    	pa_end = 19;
 			n=18;
 		}
 		if(player->curframe == n && fired == 0){
@@ -218,9 +159,6 @@ void getInput(){
     }else if (key[KEY_S] && jump == JUMPIT){//Use paint brush
 		player->xspeed = 0;
 		playAnim(player, 20, 23);
-		player_anim = 1;
-	    pa_start = 20;
-	    pa_end = 23;
     }else {
 		player->xspeed=0;
 	}	
@@ -299,12 +237,12 @@ void drawSprites(){
 	if(facing){
 		draw_sprite(buffer, player_image[player->curframe], (player->x-mapxoff), (player->y-mapyoff+1));		
 		for(j=0;j<NUMPROJ;j++){
-			draw_sprite(buffer, paint_image, (proj_paint[j]->x-mapxoff+50), (proj_paint[j]->y-mapyoff+40));
+			draw_sprite(buffer, paint_image, (proj_paint[j]->x-mapxoff+50), (proj_paint[j]->y-mapyoff+35));
 		}
 	}else{
 		draw_sprite_h_flip(buffer, player_image[player->curframe], (player->x-mapxoff), (player->y-mapyoff));
 		for(j=0;j<NUMPROJ;j++){
-			draw_sprite_h_flip(buffer, paint_image, (proj_paint[j]->x-mapxoff-10), (proj_paint[j]->y-mapyoff+40));
+			draw_sprite_h_flip(buffer, paint_image, (proj_paint[j]->x-mapxoff-10), (proj_paint[j]->y-mapyoff+35));
 		}
 	}
 }
