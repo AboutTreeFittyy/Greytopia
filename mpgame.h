@@ -13,6 +13,7 @@
 #define JUMPIT 1600
 #define PLAYERSPEED 4
 #define NUMPROJ 6
+#define TRADITION 0
 //define the structure of the sprite
 typedef struct SPRITE{
     int dir, alive;
@@ -29,15 +30,17 @@ typedef struct SPRITE{
 /***Global variables***/
 
 //Art/sprite variables
-BITMAP *player_image[32];//This limits max frames
+BITMAP *player_image[32];
+BITMAP *prime_image[8];
 BITMAP *paint_image;
 BITMAP *temp;
 SPRITE *proj_paint[6];//player projectiles
 SPRITE *player;
+SPRITE *prime;
 BITMAP *buffer;	
 
 
 //Integer variables
 int c, n, i, f, j; //index numbers
 int oldpy, oldpx, mapxoff, mapyoff, pa_start, pa_end; //Misc
-int quit, facing, jump, resting, firetime, player_anim, cur_proj, fired; //Global flags/tracking numbers
+int quit, facing, jump, resting, firetime, player_anim, cur_proj, fired, mapName; //Global flags/tracking numbers

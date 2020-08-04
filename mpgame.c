@@ -23,12 +23,44 @@ void playAnim(SPRITE *spr, int start, int endFrame){
 		player_anim = 1;	
 	}	
 }
+void loadTradition(){
+	//load vlad playable character sprite
+    temp = load_bitmap("images/chad_prime.bmp", NULL);
+    for (n=0; n<8; n++){
+		prime_image[n] = grabFrame(temp,256,256,0,0,4,n);
+    }
+    destroy_bitmap(temp);		
+    prime = malloc(sizeof(SPRITE));
+    prime->x = 650;
+    prime->y = 125;
+    prime->width = prime_image[0]->w;
+    prime->height = prime_image[0]->h;
+    prime->xdelay = 1;
+    prime->ydelay = 0;
+    prime->xcount = 0;
+    prime->ycount = 0;
+    prime->xspeed = 2;
+    prime->yspeed = 0;
+    prime->curframe = 0;
+    prime->maxframe = 3;
+    prime->framecount = 0;
+    prime->framedelay = 12;
+    prime->animdir = 1;
+    prime->startFrame = 0;
+    prime->alive = 1;
+}
 /*Loads the sprites into their struct from their bitmap files*/
 void loadLevel(char * map){   
 	//load the map
 	if(MapLoad(map)){
 		printf("Error Loading Map Code: %d", n);
 		exit(1);
+	}
+	//Eventually if more levels are built, add a parameter to pass the value for this
+	mapName = TRADITION;
+	switch(mapName){
+		case TRADITION: loadTradition();
+		break;
 	}
 	//load vlad playable character sprite
     temp = load_bitmap("images/vlad_all.bmp", NULL);
@@ -280,6 +312,15 @@ void drawSprites(){
 			draw_sprite_h_flip(buffer, paint_image, (proj_paint[j]->x-mapxoff-10), (proj_paint[j]->y-mapyoff+35));
 		}
 	}
+	switch(mapName){//Switch on different maps to know what enemies to draw
+		case TRADITION:
+			if(prime->xspeed>0){
+				draw_sprite(buffer, prime_image[prime->curframe], (prime->x-mapxoff), (prime->y-mapyoff+1));
+			}else{
+				draw_sprite_h_flip(buffer, prime_image[prime->curframe], (prime->x-mapxoff), (prime->y-mapyoff+1));
+			}
+			break;
+	}
 }
 /*Loop used during title screen, handles selection/progression to gameloop or exiting application*/
 void titleLoop(){
@@ -293,7 +334,7 @@ void gameLoop(){
 	oldpy = player->y; 
     oldpx = player->x;
     //check for collided with foreground tiles
-	if(!facing){	 
+	/*if(!facing){	 
         if(collided(player->x, player->y + player->height)){	
 			player->x = oldpx; 
 		}                
@@ -301,15 +342,31 @@ void gameLoop(){
         if(collided(player->x + player->width, player->y + player->height)){
         	player->x = oldpx; 
 		}               
-    }	
+    }	*/
 	updateSprite(player);//Update player sprite
 	for(n=0;n<NUMPROJ;n++){//Update the player projectiles
 		updateSprite(proj_paint[n]);
 	}	
+	switch(mapName){//Switch on different maps to know what enemies to draw
+		case TRADITION:
+			if(prime->x>1000){
+				prime->xspeed=-2;
+			}else if(prime->x<600){
+				prime->xspeed=2;
+			}
+			if(!collided(prime->x + prime->width/2, prime->y + prime->height)){
+	        	prime->yspeed=1; 
+			}else{
+				prime->yspeed=0;
+			}
+			updateSprite(prime);
+			break;
+	}
 	if(player->curframe == pa_end){//Turn off animation that finished
 		player_anim = 0;
 		player->animdir=0;
-	}	
+	}
+		
     updateMap();
     drawSprites();
     //blit the double buffer 
