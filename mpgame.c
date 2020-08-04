@@ -111,24 +111,16 @@ void getInput(){
 	    }else if(key[KEY_SPACE]){//Just jump
 			playAnim(player, 4, 7);
 		}
-	}else if (key[KEY_D]){ //Move right
-        facing = 1; 
-        player->xspeed=PLAYERSPEED;
-        if(jump == JUMPIT){//Not jumping so normal animation
-			playAnim(player, 0, 3);
-		}else{//continues playing jump animation after jumping
-			playAnim(player, 4, 7);
-		}
-    }else if (key[KEY_A]){ //Move left
-        facing = 0; 
-        player->xspeed=-PLAYERSPEED;
-        if(jump == JUMPIT){//Not jumping so normal animation
-			playAnim(player, 0, 3);
-		}else{//continues playing jump animation after jumping
-			playAnim(player, 4, 7);
-		}
-    }else if (key[KEY_W]){			
-		if(jump == JUMPIT){
+	}else if (key[KEY_W]){			
+		if(jump == JUMPIT && key[KEY_D]){
+	    	player->xspeed = PLAYERSPEED;
+			playAnim(player, 12, 15);			
+			n=14;
+		}else if(jump == JUMPIT && key[KEY_A]){
+	    	player->xspeed = -PLAYERSPEED;
+			playAnim(player, 12, 15);			
+			n=14;
+		}else if(jump == JUMPIT){
 	    	player->xspeed = 0;
 			playAnim(player, 8, 11);			
 			n=10;
@@ -156,9 +148,52 @@ void getInput(){
 		}else{//turn fired flag off since animation restarted
 			fired=0;
 		}
-    }else if (key[KEY_S] && jump == JUMPIT){//Use paint brush
-		player->xspeed = 0;
-		playAnim(player, 20, 23);
+    }else if (key[KEY_S]){//Use paint brush
+		
+		if(jump == JUMPIT && key[KEY_D]){
+	    	player->xspeed = PLAYERSPEED;
+			playAnim(player, 24, 27);			
+			n=26;
+		}else if(jump == JUMPIT && key[KEY_A]){
+	    	player->xspeed = -PLAYERSPEED;
+			playAnim(player, 24, 27);			
+			n=26;
+		}else if(jump == JUMPIT){
+	    	player->xspeed = 0;
+			playAnim(player, 20, 23);			
+			n=22;
+		}else{
+			playAnim(player, 28, 31);
+			n=30;
+		}
+		if(player->curframe == n && fired == 0){				
+			if(facing == 0){//melee left
+				
+			}else{//melee right
+				
+			}
+			fired = 1;
+		}else if(player->curframe == n){//keep fired flag on while on this frame
+			fired = 1;
+		}else{//turn fired flag off since animation restarted
+			fired=0;
+		}
+    }else if (key[KEY_D]){ //Move right
+        facing = 1; 
+        player->xspeed=PLAYERSPEED;
+        if(jump == JUMPIT){//Not jumping so normal animation
+			playAnim(player, 0, 3);
+		}else{//continues playing jump animation after jumping
+			playAnim(player, 4, 7);
+		}
+    }else if (key[KEY_A]){ //Move left
+        facing = 0; 
+        player->xspeed=-PLAYERSPEED;
+        if(jump == JUMPIT){//Not jumping so normal animation
+			playAnim(player, 0, 3);
+		}else{//continues playing jump animation after jumping
+			playAnim(player, 4, 7);
+		}
     }else {
 		player->xspeed=0;
 	}	
