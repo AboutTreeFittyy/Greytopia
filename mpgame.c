@@ -23,8 +23,7 @@ void playAnim(SPRITE *spr, int start, int endFrame){
 /*Loads the sprites into their struct from their bitmap files*/
 void loadLevel(char * map){   
 	//load the map
-	n = MapLoad(map);
-	if(n){
+	if(MapLoad(map)){
 		printf("Error Loading Map Code: %d", n);
 		exit(1);
 	}
@@ -52,6 +51,30 @@ void loadLevel(char * map){
     player->animdir = 0;
     player->startFrame = 0;
     player->alive = 1;
+    //Load in paint projectiles
+    temp = load_bitmap("images/grey_paint.bmp", NULL);
+    paint_image = grabFrame(temp,24,16,0,0,1,1);
+    destroy_bitmap(temp);		
+    for(n=0;n<NUMPROJ;n++){
+		proj_paint[n] = malloc(sizeof(SPRITE));
+	    proj_paint[n]->x = 30;
+	    proj_paint[n]->y = 30;
+	    proj_paint[n]->width = paint_image->w;
+	    proj_paint[n]->height = paint_image->h;
+	    proj_paint[n]->xdelay = 1;
+	    proj_paint[n]->ydelay = 0;
+	    proj_paint[n]->xcount = 0;
+	    proj_paint[n]->ycount = 0;
+	    proj_paint[n]->xspeed = 0;
+	    proj_paint[n]->yspeed = 0;
+	    proj_paint[n]->curframe = 0;
+	    proj_paint[n]->maxframe = 0;
+	    proj_paint[n]->framecount = 0;
+	    proj_paint[n]->framedelay = 12;
+	    proj_paint[n]->animdir = 0;
+	    proj_paint[n]->startFrame = 0;
+	    proj_paint[n]->alive = 1;
+	}
 }
 /*Collision function*/
 int collided(int x, int y){
@@ -80,6 +103,30 @@ void getInput(){
 	    	player_anim = 1;
 	    	pa_start = 16;
 	    	pa_end = 19;
+	    	printf("1");
+	    	/*if(player->curframe == 18 && fired == 0){
+				printf("2");
+				if(cur_proj == NUMPROJ){//Max reached
+					cur_proj = 0;
+				}				
+				if(facing == 0){//shoot left
+					proj_paint[cur_proj]->x=player->x;
+					proj_paint[cur_proj]->y=player->y;
+					proj_paint[cur_proj]->xspeed=-6;
+				}else{//shoot right
+					proj_paint[cur_proj]->x=player->x;
+					proj_paint[cur_proj]->y=player->y;
+					proj_paint[cur_proj]->xspeed=6;
+				}
+				fired = 1;
+				cur_proj++;
+			}else if(player->curframe == 18){//keep fired flag on while on this frame
+				printf("3");
+				fired = 1;
+			}else{//turn fired flag off since animation restarted
+				printf("4");
+				fired=0;
+			}*/
 		}else if(key[KEY_SPACE] && key[KEY_S]){//Jump while using paint brush   
 			playAnim(player, 28, 31);
 	    	player_anim = 1;
@@ -92,7 +139,6 @@ void getInput(){
 	        player_anim = 1;
 		   	pa_start = 4;
 		    pa_end = 7;
-	        firetime = -1;//use to tell if moved before firing
 	    }else if (key[KEY_A]){ //Move left
 	        facing = 0; 
 	        player->xspeed=-PLAYERSPEED;
@@ -100,7 +146,6 @@ void getInput(){
 	        player_anim = 1;
 		    pa_start = 0;
 		    pa_end = 3;
-	        firetime = -1;//use to tell if moved before firing
 	    }else if(key[KEY_SPACE]){//Just jump
 			playAnim(player, 4, 7);
 	    	player_anim = 1;
@@ -121,7 +166,6 @@ void getInput(){
 		   	pa_start = 4;
 		    pa_end = 7;
 		}
-        firetime = -1;//use to tell if moved before firing
     }else if (key[KEY_A]){ //Move left
         facing = 0; 
         player->xspeed=-PLAYERSPEED;
@@ -136,18 +180,41 @@ void getInput(){
 		   	pa_start = 4;
 		    pa_end = 7;
 		}
-        firetime = -1;//use to tell if moved before firing
-    }else if (key[KEY_W] && jump == JUMPIT){
-		//if(firetime == -1){//must have moved, reset firing time
-			player->xspeed = 0;
-			playAnim(player, 8, 11);
-			player_anim = 1;
+    }else if (key[KEY_W]){			
+	    player_anim = 1;
+		if(jump == JUMPIT){
+	    	player->xspeed = 0;
+			playAnim(player, 8, 11);			
 		    pa_start = 8;
 		    pa_end = 11;
-			firetime = clock();
-		//}else if(firetime + 1000 > clock()){//Check if sprite readied to fire given enough time
-			//fire
-		//s}
+			n=10;
+		}else{
+			playAnim(player, 16, 19);
+	    	player_anim = 1;
+			pa_start = 16;
+	    	pa_end = 19;
+			n=18;
+		}
+		if(player->curframe == n && fired == 0){
+			if(cur_proj == NUMPROJ){//Max reached
+				cur_proj = 0;
+			}				
+			if(facing == 0){//shoot left
+				proj_paint[cur_proj]->x=player->x;
+				proj_paint[cur_proj]->y=player->y;
+				proj_paint[cur_proj]->xspeed=-6;
+			}else{//shoot right
+				proj_paint[cur_proj]->x=player->x;
+				proj_paint[cur_proj]->y=player->y;
+				proj_paint[cur_proj]->xspeed=6;
+			}
+			fired = 1;
+			cur_proj++;
+		}else if(player->curframe == n){//keep fired flag on while on this frame
+			fired = 1;
+		}else{//turn fired flag off since animation restarted
+			fired=0;
+		}
     }else if (key[KEY_S] && jump == JUMPIT){//Use paint brush
 		player->xspeed = 0;
 		playAnim(player, 20, 23);
@@ -226,13 +293,19 @@ void updateSprite(SPRITE *spr){
         }
     }
 }
-
+/*Draws all of the sprites in the game to the buffer*/
 void drawSprites(){
 	//draw the player's sprite
 	if(facing){
-		draw_sprite(buffer, player_image[player->curframe], (player->x-mapxoff), (player->y-mapyoff+1));
+		draw_sprite(buffer, player_image[player->curframe], (player->x-mapxoff), (player->y-mapyoff+1));		
+		for(j=0;j<NUMPROJ;j++){
+			draw_sprite(buffer, paint_image, (proj_paint[j]->x-mapxoff+50), (proj_paint[j]->y-mapyoff+40));
+		}
 	}else{
 		draw_sprite_h_flip(buffer, player_image[player->curframe], (player->x-mapxoff), (player->y-mapyoff));
+		for(j=0;j<NUMPROJ;j++){
+			draw_sprite_h_flip(buffer, paint_image, (proj_paint[j]->x-mapxoff-10), (proj_paint[j]->y-mapyoff+40));
+		}
 	}
 }
 /*Loop used during title screen, handles selection/progression to gameloop or exiting application*/
@@ -256,7 +329,10 @@ void gameLoop(){
         	player->x = oldpx; 
 		}               
     }	
-	updateSprite(player);	
+	updateSprite(player);//Update player sprite
+	for(n=0;n<NUMPROJ;n++){//Update the player projectiles
+		updateSprite(proj_paint[n]);
+	}	
 	if(player->curframe == pa_end){//Turn off animation that finished
 		player_anim = 0;
 		player->animdir=0;
@@ -272,6 +348,7 @@ void gameLoop(){
 /*Main function, handles initial loading. Passes on taks to be handled in title/game loop functions. When quit, destroys allocated memory.*/
 int main(void){
     facing = 0, jump = JUMPIT, quit = 0, firetime = -1, player_anim = 0, pa_start = 0, pa_end = 0;
+	fired = 0, cur_proj = 0;
 	allegro_init();	
 	install_timer();
 	install_keyboard();
