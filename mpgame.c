@@ -164,7 +164,16 @@ void checkMelee(int x1, int x2, int y1, int y2){
 			break;
 	}
 }
-
+/*Check for any collision with the maps given enemies and the projectiles*/
+void checkFire(SPRITE *spr){
+	switch(mapName){
+		case TRADITION:
+		    if(collide(spr, prime, 0)){//Check if collided
+		    	printf(".SHOOT_HIT");
+			}
+			break;
+	}
+}
 /*Input handling function, checks pressed key to see what action to take depending on set flags at time*/
 void getInput(){
 	//Check for quit game
@@ -191,7 +200,7 @@ void getInput(){
 	    }else if(key[KEY_SPACE]){//Just jump
 			playAnim(player, 4, 7);
 		}
-	}else if (key[KEY_W]){			
+	}else if (key[KEY_W]){//Shoot paint gun		
 		if(jump == JUMPIT && key[KEY_D]){
 	    	player->xspeed = PLAYERSPEED;
 			playAnim(player, 12, 15);			
@@ -317,7 +326,6 @@ void updateMap(){
     //draw foreground tiles
 	MapDrawFG(buffer, mapxoff, mapyoff, 0, 0, WIDTH-1, HEIGHT-1, 0);
 }
-
 //updates the properties of the specified sprite
 void updateSprite(SPRITE *spr){
     //update x position
@@ -393,6 +401,7 @@ void gameLoop(){
 	updateSprite(player);//Update player sprite
 	for(n=0;n<NUMPROJ;n++){//Update the player projectiles
 		updateSprite(proj_paint[n]);
+		checkFire(proj_paint[n]);//Check for collisions with enemies
 	}	
 	switch(mapName){//Switch on different maps to know what enemies to draw
 		case TRADITION:
