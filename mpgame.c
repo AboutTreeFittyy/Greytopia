@@ -26,7 +26,7 @@ void playAnim(SPRITE *spr, int start, int endFrame){
 void loadTradition(){
 	//load vlad playable character sprite
     temp = load_bitmap("images/chad_prime.bmp", NULL);
-    for (n=0; n<8; n++){
+    for (n=0; n<12; n++){
 		prime_image[n] = grabFrame(temp,256,256,0,0,4,n);
     }
     destroy_bitmap(temp);		
@@ -47,6 +47,7 @@ void loadTradition(){
     prime->framedelay = 12;
     prime->animdir = 1;
     prime->startFrame = 0;
+    prime->health = 500;
     prime->alive = 1;
 }
 /*Loads the sprites into their struct from their bitmap files*/
@@ -85,6 +86,7 @@ void loadLevel(char * map){
     player->framedelay = 12;
     player->animdir = 0;
     player->startFrame = 0;
+    player->health = 200;
     player->alive = 1;
     //Load in paint projectiles
     temp = load_bitmap("images/grey_paint.bmp", NULL);
@@ -150,27 +152,58 @@ int collide(SPRITE *first, SPRITE *second, int border) {
 }
 /*Check collisions for enemy with attack*/
 void checkMelee(int x1, int x2, int y1, int y2){
+	tempSprite->x = x1;
+    tempSprite->y = y1;
+    tempSprite->width = x2 - x1;
+    tempSprite->height = y1 - y2;
 	switch(mapName){
-		case TRADITION:
-			tempSprite->x = x1;
-		    tempSprite->y = y1;
-		    tempSprite->width = x2 - x1;
-		    tempSprite->height = y1 - y2;
-		    if(collide(tempSprite, prime, 0)){
-		    	printf(".MELEE_HIT");
-			}else{
-				//printf("MELEE_MISS");
+		case TRADITION:			
+		    if(collide(tempSprite, prime, 50)){
+		    	prime->health -= 25;
+		    	if(prime->health <= 0){
+		    		prime->alive = 0;
+				}else{
+					prime->y-=15;//Bounce when hit to let player know damage is dealt
+				}
 			}
 			break;
 	}
 }
 /*Check for any collision with the maps given enemies and the projectiles*/
 void checkFire(SPRITE *spr){
+	j=0;
 	switch(mapName){
 		case TRADITION:
-		    if(collide(spr, prime, 0)){//Check if collided
-		    	printf(".SHOOT_HIT");
+			//See if hit box is for front or back
+			if(player->x < prime->x && prime->xspeed >0){//player on left side and prime walking to right
+				j = collide(spr, prime, 10);
+			}else if(player->x < prime->x && prime->xspeed <0){//Player on left side and prime walking left
+				//tempSprite = prime;
+				//tempSprite->width=prime->width/2;
+				tempSprite->x = prime->x+(prime->width/2);
+			    tempSprite->y = prime->y;
+			    tempSprite->width = prime->width/2;
+			    tempSprite->height = prime->height;
+				j = collide(spr, tempSprite, 10);
+			}else if(player->x > prime->x && prime->xspeed >0){//Player on right side and prime walking right
+				tempSprite->x = prime->x;
+			    tempSprite->y = prime->y;
+			    tempSprite->width = prime->width/2;
+			    tempSprite->height = prime->height;
+				j = collide(spr, tempSprite, 10);
+			}else if(player->x > prime->x && prime->xspeed <0){//Player on right side and prime walkiing left
+				j = collide(spr, prime, 10);
 			}
+		    if(j){//Check if collided
+		    	prime->health -= 25;
+		    	if(prime->health <= 0){
+		    		prime->alive = 0;
+				}else{
+					prime->y-=15;//Bounce when hit to let player know damage is dealt
+				}
+				spr->y=-50;//Get rid of shot so it doesnt hit more than once
+			}
+			j=0;
 			break;
 	}
 }
@@ -303,7 +336,7 @@ void getInput(){
         } 
     }
 }
-
+//Moves map around
 void updateMap(){
 	//update the map scroll position
 	mapxoff = player->x + player->width/2 - WIDTH/2 + 10;
@@ -388,16 +421,6 @@ void gameLoop(){
 	}    
 	oldpy = player->y; 
     oldpx = player->x;
-    //check for collided with foreground tiles
-	/*if(!facing){	 
-        if(collided(player->x, player->y + player->height)){	
-			player->x = oldpx; 
-		}                
-    }else{ 
-        if(collided(player->x + player->width, player->y + player->height)){
-        	player->x = oldpx; 
-		}               
-    }	*/
 	updateSprite(player);//Update player sprite
 	for(n=0;n<NUMPROJ;n++){//Update the player projectiles
 		updateSprite(proj_paint[n]);
@@ -405,17 +428,24 @@ void gameLoop(){
 	}	
 	switch(mapName){//Switch on different maps to know what enemies to draw
 		case TRADITION:
-			if(prime->x>1000){
-				prime->xspeed=-2;
-			}else if(prime->x<600){
-				prime->xspeed=2;
-			}
-			if(!collided(prime->x + prime->width/2, prime->y + prime->height)){
-	        	prime->yspeed=1; 
-			}else{
-				prime->yspeed=0;
-			}
-			updateSprite(prime);
+			if(prime->curframe != 11){//Last frame after dead, stay on it when dead
+				if(!prime->alive){//He's dead so play the death animation
+					playAnim(prime, 8, 11);
+				}
+				if(prime->x>1000){
+					prime->xspeed=-2;
+				}else if(prime->x<600){
+					prime->xspeed=2;
+				}
+				if(!collided(prime->x + prime->width/2, prime->y + prime->height)){
+		        	prime->yspeed=1; 
+				}else{
+					prime->yspeed=0;
+				}
+				updateSprite(prime);
+			}else{//must be on last frame so just stay on it
+				prime->xspeed=0;
+			}			
 			break;
 	}
 	if(player->curframe == pa_end){//Turn off animation that finished

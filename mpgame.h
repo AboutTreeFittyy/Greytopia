@@ -16,7 +16,7 @@
 #define TRADITION 0
 //define the structure of the sprite
 typedef struct SPRITE{
-    int dir, alive;
+    int dir, alive, health;
     int x,y;
     int width,height;
     int xspeed,yspeed;
@@ -31,7 +31,7 @@ typedef struct SPRITE{
 
 //Art/sprite variables
 BITMAP *player_image[32];
-BITMAP *prime_image[8];
+BITMAP *prime_image[12];
 BITMAP *paint_image;
 BITMAP *temp;
 SPRITE *proj_paint[6];//player projectiles
