@@ -32,15 +32,15 @@ void loadTradition(){
     }
     destroy_bitmap(temp);		
     prime = malloc(sizeof(SPRITE));
-    prime->x = 1650;
-    prime->y = 100;
+    prime->x = 3500;
+    prime->y = 0;
     prime->width = prime_image[0]->w;
     prime->height = prime_image[0]->h;
     prime->xdelay = 1;
     prime->ydelay = 0;
     prime->xcount = 0;
     prime->ycount = 0;
-    prime->xspeed = 2;
+    prime->xspeed = 0;
     prime->yspeed = 0;
     prime->curframe = 0;
     prime->maxframe = 3;
@@ -57,7 +57,7 @@ void loadTradition(){
     }
     destroy_bitmap(temp);		
     snek = malloc(sizeof(SPRITE));
-    snek->x = 650;
+    snek->x = 1200;
     snek->y = 125;
     snek->width = snek_image[0]->w;
     snek->height = snek_image[0]->h;
@@ -120,8 +120,8 @@ void loadLevel(char * map){
     destroy_bitmap(temp);		
     for(n=0;n<NUMPROJ;n++){
 		proj_paint[n] = malloc(sizeof(SPRITE));
-	    proj_paint[n]->x = -50;
-	    proj_paint[n]->y = -50;
+	    proj_paint[n]->x = 3900;
+	    proj_paint[n]->y = 600;
 	    proj_paint[n]->width = paint_image->w;
 	    proj_paint[n]->height = paint_image->h;
 	    proj_paint[n]->xdelay = 1;
@@ -139,7 +139,7 @@ void loadLevel(char * map){
 	    proj_paint[n]->alive = 1;
 	}
 }
-/*Collision function*/
+/*Collision function for with blocks*/
 int collided(int x, int y){
 	BLKSTR *blockdata;
 	blockdata = MapGetBlock(x/mapblockwidth, y/mapblockheight);	
@@ -219,10 +219,24 @@ void checkMelee(int x1, int x2, int y1, int y2){
 /*Check for any collision with the maps given enemies and the projectiles*/
 void checkFire(SPRITE *spr){
 	j=0;
+	//printf(".1");
+	/*Stop projectile when collides with wall/platform*/
+	if(collided(spr->x,spr->y+spr->height/2) && spr->xspeed < 0){
+		spr->y = 600;
+		spr->x = 3900;
+		spr->xspeed=0;
+	}else if(collided(spr->x+spr->width,spr->y+spr->height/2) && spr->xspeed > 0){
+		spr->y = 600;
+		spr->x = 3900;
+		spr->xspeed=0;
+	}
+	//printf(".2");
+	/*Switch on what map playing to see what enemies there are for updating*/
 	switch(mapName){
 		case TRADITION:
 			/*Prime*/
 			//See if hit box is for front or back
+			//printf(".A");
 			if(player->x < prime->x && prime->xspeed >0){//player on left side and prime walking to right
 				j = collide(spr, prime, 10);
 			}else if(player->x < prime->x && prime->xspeed <0){//Player on left side and prime walking left
@@ -240,6 +254,7 @@ void checkFire(SPRITE *spr){
 			}else if(player->x > prime->x && prime->xspeed <0){//Player on right side and prime walkiing left
 				j = collide(spr, prime, 10);
 			}
+			//printf(".D");
 		    if(j){//Check if collided
 		    	prime->health -= 25;
 		    	if(prime->health <= 0){
@@ -247,8 +262,10 @@ void checkFire(SPRITE *spr){
 				}else{
 					prime->y-=15;//Bounce when hit to let player know damage is dealt
 				}
-				spr->y=-50;//Get rid of shot so it doesnt hit more than once
+				spr->y = 600;
+				spr->x = 3900;//Get rid of shot so it doesnt hit more than once
 			}
+			//printf(".Z");
 			j=0;
 			/*Snek*/
 			j = collide(spr, snek, 10);
@@ -259,7 +276,8 @@ void checkFire(SPRITE *spr){
 				}else{
 					snek->y-=15;//Bounce when hit to let player know damage is dealt
 				}
-				spr->y=-50;//Get rid of shot so it doesnt hit more than once
+				spr->y = 600;
+				spr->x = 3900;//Get rid of shot so it doesnt hit more than once
 			}
 			j=0;
 			break;
@@ -346,15 +364,11 @@ void getInput(){
 			n=30;
 		}
 		if(player->curframe == n && fired == 0){				
-			printf(".BEFORE");
 			if(facing == 0){//melee left
-			printf(".LEFT");
 				checkMelee(player->x-40, player->x, player->y - 10, player->y - 60);
 			}else{//melee right
-			printf(".RIGHT");
 				checkMelee(player->x+player->width, player->x+player->width+40, player->y - 10, player->y - 60);
 			}
-			printf(".AFTER");
 			fired = 1;
 		}else if(player->curframe == n){//keep fired flag on while on this frame
 			fired = 1;
@@ -481,8 +495,10 @@ void drawSprites(){
 void handleEnemies(){
 	switch(mapName){//Switch on different maps to know what enemies to draw
 		case TRADITION:
+			//printf(".A");
 			/*Handle Prime enemy*/
 			if(prime->curframe != 11){//Last frame after dead, stay on it when dead
+				//printf(".B");
 				if(!prime->alive){//He's dead so play the death animation
 					playAnim(prime, 8, 11);
 				}else if(collide(player, prime, 10)){
@@ -497,20 +513,30 @@ void handleEnemies(){
 						player->x += 10;
 					}
 				}
-				if(prime->x>2000){
+				if(player->x>3000){
+					prime->xspeed = -(PLAYERSPEED-1);
+					//printf(".PRIMEY:%d", prime->y);
+					//printf(".PRIMEX:%d", prime->x);
+				}
+				//printf(".Q");
+				/*if(prime->x>3000){//used if keeping in certain area
 					prime->xspeed=-2;
-				}else if(prime->x<1000){
+				}else */if(prime->x<10){//prevents game crash from prime running off screen
 					prime->xspeed=2;
 				}
+				//printf(".R");
 				if(!collided(prime->x + prime->width/2, prime->y + prime->height)){
 		        	prime->yspeed=1; 
 				}else{
 					prime->yspeed=0;
 				}
+				//printf(".S");
 				updateSprite(prime);
+				//printf(".T");
 			}else{//must be on last frame so just stay on it
 				prime->xspeed=0;
 			}	
+			//printf(".C");
 			/*Handle Snek enemy*/
 			if(snek->curframe != 11){//Last frame after dead, stay on it when dead
 				if(!snek->alive){//He's dead so play the death animation
@@ -527,9 +553,9 @@ void handleEnemies(){
 						player->x += 10;
 					}
 				}
-				if(snek->x>1000){
+				if(snek->x>1450){
 					snek->xspeed=-2;
-				}else if(snek->x<600){
+				}else if(snek->x<800){
 					snek->xspeed=2;
 				}
 				if(!collided(snek->x + snek->width/2, snek->y + snek->height)){
@@ -540,11 +566,11 @@ void handleEnemies(){
 				if(player->x < snek->x && player->x > snek->x-20){//stop player from passing through snake from left side
 					player->x-=10;
 					player->health-=20;
-					printf(".HIT");
+					//printf(".HIT");
 				}else if(player->x > snek->x && player->x > snek->x-snek->width+20){
 					player->x-=10;
 					player->health-=20;
-					printf(".HIT");
+					//printf(".HIT");
 				}
 				updateSprite(snek);
 			}else{//must be on last frame so just stay on it
@@ -552,6 +578,7 @@ void handleEnemies(){
 			}				
 			break;
 	}
+	//printf(".Z");
 }
 /*Loop used during title screen, handles selection/progression to gameloop or exiting application*/
 void titleLoop(){
@@ -572,6 +599,7 @@ void gameLoop(){
 	}	
 	//printf(".2");
 	handleEnemies();//Update enemies
+	//printf(".2-1");
 	if(player->curframe == pa_end){//Turn off animation that finished
 		player_anim = 0;
 		player->animdir=0;
@@ -580,6 +608,16 @@ void gameLoop(){
     updateMap();
     drawSprites();
     //printf(".4");
+    /*Prevent player from walking through walls, need to hit top and bottom of player so can still walk through platforms*/
+    if(collided(player->x + player->width/2, player->y + player->height) && collided(player->x + player->width/2, player->y + player->height/2)){//right side hit wall and trying to move through it
+    	if(player->xspeed > 0){//right side hit wall and trying to move through it
+    	player->x -= PLAYERSPEED;
+    	player->xspeed = 0;
+		}else if(player->xspeed < 0){//left side hit wall and trying to move through it
+	    	player->x += PLAYERSPEED;
+	    	player->xspeed = 0;
+		}
+	}
     //blit the double buffer 
 	vsync();
 	//printf(".5");
