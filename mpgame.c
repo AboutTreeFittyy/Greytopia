@@ -563,14 +563,24 @@ void handleEnemies(){
 				}else{
 					snek->yspeed=0;
 				}
-				if(player->x < snek->x && player->x > snek->x-20){//stop player from passing through snake from left side
-					player->x-=10;
-					player->health-=20;
-					//printf(".HIT");
-				}else if(player->x > snek->x && player->x > snek->x-snek->width+20){
-					player->x-=10;
-					player->health-=20;
-					//printf(".HIT");
+				if(player->x+player->width > snek->x-20 && player->x+player->width< snek->x+2){//stop player from passing through snake from left side
+					printf(".IN");
+					playAnim(snek, 4, 7);
+					if(player->x+player->width > snek->x-3){
+						printf(".IN2");
+						player->x-=10;
+						player->health-=20;						
+					}
+				}else if(player->x > snek->x+snek->width-2 && player->x< snek->x+snek->width+20){//stop player from passing through snake from left side
+					printf(".IN3");
+					playAnim(snek, 4, 7);
+					if(player->x < snek->x+3){
+						printf(".IN4");
+						player->x-=10;
+						player->health-=20;						
+					}
+				}else{
+					playAnim(snek, 0, 3);
 				}
 				updateSprite(snek);
 			}else{//must be on last frame so just stay on it
