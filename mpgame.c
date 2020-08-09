@@ -23,16 +23,17 @@ void playAnim(SPRITE *spr, int start, int endFrame){
 		player_anim = 1;	
 	}	
 }
+/*Loads in the tradition level assets*/
 void loadTradition(){
-	//load vlad playable character sprite
+	//load prime robot character sprite
     temp = load_bitmap("images/chad_prime.bmp", NULL);
     for (n=0; n<12; n++){
 		prime_image[n] = grabFrame(temp,256,256,0,0,4,n);
     }
     destroy_bitmap(temp);		
     prime = malloc(sizeof(SPRITE));
-    prime->x = 650;
-    prime->y = 125;
+    prime->x = 1650;
+    prime->y = 100;
     prime->width = prime_image[0]->w;
     prime->height = prime_image[0]->h;
     prime->xdelay = 1;
@@ -49,6 +50,31 @@ void loadTradition(){
     prime->startFrame = 0;
     prime->health = 500;
     prime->alive = 1;
+    //load prime robot character sprite
+    temp = load_bitmap("images/snek_larger.bmp", NULL);
+    for (n=0; n<12; n++){
+		snek_image[n] = grabFrame(temp,256,256,0,0,4,n);
+    }
+    destroy_bitmap(temp);		
+    snek = malloc(sizeof(SPRITE));
+    snek->x = 650;
+    snek->y = 125;
+    snek->width = snek_image[0]->w;
+    snek->height = snek_image[0]->h;
+    snek->xdelay = 1;
+    snek->ydelay = 0;
+    snek->xcount = 0;
+    snek->ycount = 0;
+    snek->xspeed = 2;
+    snek->yspeed = 0;
+    snek->curframe = 0;
+    snek->maxframe = 3;
+    snek->framecount = 0;
+    snek->framedelay = 12;
+    snek->animdir = 1;
+    snek->startFrame = 0;
+    snek->health = 500;
+    snek->alive = 1;
 }
 /*Loads the sprites into their struct from their bitmap files*/
 void loadLevel(char * map){   
@@ -70,8 +96,8 @@ void loadLevel(char * map){
     }
     destroy_bitmap(temp);		
     player = malloc(sizeof(SPRITE));
-    player->x = 80;
-    player->y = 100;
+    player->x = 36;
+    player->y = 360;
     player->width = player_image[0]->w;
     player->height = player_image[0]->h;
     player->xdelay = 1;
@@ -150,15 +176,35 @@ int collide(SPRITE *first, SPRITE *second, int border) {
 	}
 	return 0;//no collision return 0
 }
-/*Check collisions for enemy with attack*/
+/*Check collisions for enemy with attack (Snek can't be meleed)*/
 void checkMelee(int x1, int x2, int y1, int y2){
+	j=0;
+	SPRITE *t = malloc(sizeof(SPRITE));
 	tempSprite->x = x1;
     tempSprite->y = y1;
     tempSprite->width = x2 - x1;
     tempSprite->height = y1 - y2;
 	switch(mapName){
 		case TRADITION:			
-		    if(collide(tempSprite, prime, 50)){
+		    //See if hit box is for front or back
+			if(player->x < prime->x && prime->xspeed >0){//player on left side and prime walking to right
+				j = collide(tempSprite, prime, 10);
+			}else if(player->x < prime->x && prime->xspeed <0){//Player on left side and prime walking left
+				t->x = prime->x+(prime->width/2);
+			    t->y = prime->y;
+			    t->width = prime->width/2;
+			    t->height = prime->height;
+				j = collide(tempSprite, t, 10);
+			}else if(player->x > prime->x && prime->xspeed >0){//Player on right side and prime walking right
+				t->x = prime->x;
+			    t->y = prime->y;
+			    t->width = prime->width/2;
+			    t->height = prime->height;
+				j = collide(tempSprite, t, 10);
+			}else if(player->x > prime->x && prime->xspeed <0){//Player on right side and prime walkiing left
+				j = collide(tempSprite, prime, 10);
+			}
+		    if(j){
 		    	prime->health -= 25;
 		    	if(prime->health <= 0){
 		    		prime->alive = 0;
@@ -168,18 +214,18 @@ void checkMelee(int x1, int x2, int y1, int y2){
 			}
 			break;
 	}
+	free(t);
 }
 /*Check for any collision with the maps given enemies and the projectiles*/
 void checkFire(SPRITE *spr){
 	j=0;
 	switch(mapName){
 		case TRADITION:
+			/*Prime*/
 			//See if hit box is for front or back
 			if(player->x < prime->x && prime->xspeed >0){//player on left side and prime walking to right
 				j = collide(spr, prime, 10);
 			}else if(player->x < prime->x && prime->xspeed <0){//Player on left side and prime walking left
-				//tempSprite = prime;
-				//tempSprite->width=prime->width/2;
 				tempSprite->x = prime->x+(prime->width/2);
 			    tempSprite->y = prime->y;
 			    tempSprite->width = prime->width/2;
@@ -200,6 +246,18 @@ void checkFire(SPRITE *spr){
 		    		prime->alive = 0;
 				}else{
 					prime->y-=15;//Bounce when hit to let player know damage is dealt
+				}
+				spr->y=-50;//Get rid of shot so it doesnt hit more than once
+			}
+			j=0;
+			/*Snek*/
+			j = collide(spr, snek, 10);
+		    if(j && snek->alive){//Check if collided
+		    	snek->health -= 25;
+		    	if(snek->health <= 0){
+		    		snek->alive = 0;
+				}else{
+					snek->y-=15;//Bounce when hit to let player know damage is dealt
 				}
 				spr->y=-50;//Get rid of shot so it doesnt hit more than once
 			}
@@ -288,11 +346,15 @@ void getInput(){
 			n=30;
 		}
 		if(player->curframe == n && fired == 0){				
+			printf(".BEFORE");
 			if(facing == 0){//melee left
+			printf(".LEFT");
 				checkMelee(player->x-40, player->x, player->y - 10, player->y - 60);
 			}else{//melee right
+			printf(".RIGHT");
 				checkMelee(player->x+player->width, player->x+player->width+40, player->y - 10, player->y - 60);
 			}
+			printf(".AFTER");
 			fired = 1;
 		}else if(player->curframe == n){//keep fired flag on while on this frame
 			fired = 1;
@@ -402,11 +464,92 @@ void drawSprites(){
 	}
 	switch(mapName){//Switch on different maps to know what enemies to draw
 		case TRADITION:
-			if(prime->xspeed>0){
+			if(prime->xspeed>0){//Prime
 				draw_sprite(buffer, prime_image[prime->curframe], (prime->x-mapxoff), (prime->y-mapyoff+1));
 			}else{
 				draw_sprite_h_flip(buffer, prime_image[prime->curframe], (prime->x-mapxoff), (prime->y-mapyoff+1));
 			}
+			if(snek->xspeed<0){//Snek
+				draw_sprite(buffer, snek_image[snek->curframe], (snek->x-mapxoff), (snek->y-mapyoff+1));
+			}else{
+				draw_sprite_h_flip(buffer, snek_image[snek->curframe], (snek->x-mapxoff), (snek->y-mapyoff+1));
+			}
+			break;
+	}
+}
+/*Handles enemy updates and events*/
+void handleEnemies(){
+	switch(mapName){//Switch on different maps to know what enemies to draw
+		case TRADITION:
+			/*Handle Prime enemy*/
+			if(prime->curframe != 11){//Last frame after dead, stay on it when dead
+				if(!prime->alive){//He's dead so play the death animation
+					playAnim(prime, 8, 11);
+				}else if(collide(player, prime, 10)){
+					player->health-=10;//player lose health
+					if(prime->xspeed > 0 && player->x > prime->x){//bounce player back to right
+						player->x += 10;
+					}else if(prime->xspeed > 0 && player->x < prime->x){//bounce player back to left
+						player->x -= 10;
+					}else if(prime->xspeed < 0 && player->x < prime->x){//bounce player back to left
+						player->x -= 10;
+					}else{//bounce player back to left
+						player->x += 10;
+					}
+				}
+				if(prime->x>2000){
+					prime->xspeed=-2;
+				}else if(prime->x<1000){
+					prime->xspeed=2;
+				}
+				if(!collided(prime->x + prime->width/2, prime->y + prime->height)){
+		        	prime->yspeed=1; 
+				}else{
+					prime->yspeed=0;
+				}
+				updateSprite(prime);
+			}else{//must be on last frame so just stay on it
+				prime->xspeed=0;
+			}	
+			/*Handle Snek enemy*/
+			if(snek->curframe != 11){//Last frame after dead, stay on it when dead
+				if(!snek->alive){//He's dead so play the death animation
+					playAnim(snek, 8, 11);
+				}else if(collide(player, snek, 10)){
+					player->health-=10;//player lose health
+					if(snek->xspeed > 0 && player->x > snek->x){//bounce player back to right
+						player->x += 10;
+					}else if(snek->xspeed > 0 && player->x < snek->x){//bounce player back to left
+						player->x -= 10;
+					}else if(snek->xspeed < 0 && player->x < snek->x){//bounce player back to left
+						player->x -= 10;
+					}else{//bounce player back to left
+						player->x += 10;
+					}
+				}
+				if(snek->x>1000){
+					snek->xspeed=-2;
+				}else if(snek->x<600){
+					snek->xspeed=2;
+				}
+				if(!collided(snek->x + snek->width/2, snek->y + snek->height)){
+		        	snek->yspeed=1; 
+				}else{
+					snek->yspeed=0;
+				}
+				if(player->x < snek->x && player->x > snek->x-20){//stop player from passing through snake from left side
+					player->x-=10;
+					player->health-=20;
+					printf(".HIT");
+				}else if(player->x > snek->x && player->x > snek->x-snek->width+20){
+					player->x-=10;
+					player->health-=20;
+					printf(".HIT");
+				}
+				updateSprite(snek);
+			}else{//must be on last frame so just stay on it
+				snek->xspeed=0;
+			}				
 			break;
 	}
 }
@@ -418,7 +561,8 @@ void titleLoop(){
 void gameLoop(){	
     if(keypressed()){ //Get keyboard input when key(s) pressed
     	getInput();
-	}    
+	}  
+	//printf(".1");  
 	oldpy = player->y; 
     oldpx = player->x;
 	updateSprite(player);//Update player sprite
@@ -426,40 +570,25 @@ void gameLoop(){
 		updateSprite(proj_paint[n]);
 		checkFire(proj_paint[n]);//Check for collisions with enemies
 	}	
-	switch(mapName){//Switch on different maps to know what enemies to draw
-		case TRADITION:
-			if(prime->curframe != 11){//Last frame after dead, stay on it when dead
-				if(!prime->alive){//He's dead so play the death animation
-					playAnim(prime, 8, 11);
-				}
-				if(prime->x>1000){
-					prime->xspeed=-2;
-				}else if(prime->x<600){
-					prime->xspeed=2;
-				}
-				if(!collided(prime->x + prime->width/2, prime->y + prime->height)){
-		        	prime->yspeed=1; 
-				}else{
-					prime->yspeed=0;
-				}
-				updateSprite(prime);
-			}else{//must be on last frame so just stay on it
-				prime->xspeed=0;
-			}			
-			break;
-	}
+	//printf(".2");
+	handleEnemies();//Update enemies
 	if(player->curframe == pa_end){//Turn off animation that finished
 		player_anim = 0;
 		player->animdir=0;
-	}
-		
+	}	
+	//printf(".3");	
     updateMap();
     drawSprites();
+    //printf(".4");
     //blit the double buffer 
 	vsync();
+	//printf(".5");
     acquire_screen();
+    //printf(".6");
 	blit(buffer, screen, 0, 0, 0, 0, WIDTH-1, HEIGHT-1);
+	//printf(".7");
     release_screen();
+    //printf(".8");
 }
 /*Main function, handles initial loading. Passes on taks to be handled in title/game loop functions. When quit, destroys allocated memory.*/
 int main(void){
@@ -504,6 +633,8 @@ int main(void){
     	destroy_bitmap(player_image[n]);
 	}        
     free(player);
+    free(prime);
+    free(snek);
 	destroy_bitmap(buffer);
 	MapFreeMem ();
 	printf(".CLEANED");

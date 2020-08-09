@@ -32,10 +32,12 @@ typedef struct SPRITE{
 //Art/sprite variables
 BITMAP *player_image[32];
 BITMAP *prime_image[12];
+BITMAP *snek_image[12];
 BITMAP *paint_image;
 BITMAP *temp;
 SPRITE *proj_paint[6];//player projectiles
 SPRITE *player;
+SPRITE *snek;
 SPRITE *prime;
 SPRITE *tempSprite;
 BITMAP *buffer;	
