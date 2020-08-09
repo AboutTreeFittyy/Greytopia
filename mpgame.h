@@ -13,7 +13,9 @@
 #define JUMPIT 1600
 #define PLAYERSPEED 4
 #define NUMPROJ 6
+#define FATS 3
 #define TRADITION 0
+#define EQUALITY 1
 //define the structure of the sprite
 typedef struct SPRITE{
     int dir, alive, health;
@@ -33,14 +35,19 @@ typedef struct SPRITE{
 BITMAP *player_image[32];
 BITMAP *prime_image[12];
 BITMAP *snek_image[12];
+BITMAP *fat_image[20];
+BITMAP *drag_image[6];
 BITMAP *paint_image;
 BITMAP *temp;
+BITMAP *buffer;	
+SPRITE *tempSprite;
 SPRITE *proj_paint[6];//player projectiles
 SPRITE *player;
-SPRITE *snek;
+SPRITE *snek;//Tradition enemies
+SPRITE *fat[FATS];
 SPRITE *prime;
-SPRITE *tempSprite;
-BITMAP *buffer;	
+SPRITE *drag;//Equality Enemies
+
 
 
 //Integer variables

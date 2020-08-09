@@ -75,6 +75,31 @@ void loadTradition(){
     snek->startFrame = 0;
     snek->health = 500;
     snek->alive = 1;
+    /*//load dragon character sprite
+    temp = load_bitmap("images/equality_bg/dragon.bmp", NULL);
+    for (n=0; n<6; n++){
+		drag_image[n] = grabFrame(temp,575,264,0,0,6,n);
+    }
+    destroy_bitmap(temp);		
+    drag = malloc(sizeof(SPRITE));
+    drag->x = 500;
+    drag->y = 0;
+    drag->width = drag_image[0]->w;
+    drag->height = drag_image[0]->h;
+    drag->xdelay = 1;
+    drag->ydelay = 0;
+    drag->xcount = 0;
+    drag->ycount = 0;
+    drag->xspeed = 0;
+    drag->yspeed = 0;
+    drag->curframe = 0;
+    drag->maxframe = 5;
+    drag->framecount = 0;
+    drag->framedelay = 12;
+    drag->animdir = 1;
+    drag->startFrame = 0;
+    drag->health = 500;
+    drag->alive = 1;*/
 }
 /*Loads the sprites into their struct from their bitmap files*/
 void loadLevel(char * map){   
@@ -274,7 +299,7 @@ void checkFire(SPRITE *spr){
 		    	if(snek->health <= 0){
 		    		snek->alive = 0;
 				}else{
-					snek->y-=15;//Bounce when hit to let player know damage is dealt
+					snek->y-=25;//Bounce when hit to let player know damage is dealt
 				}
 				spr->y = 600;
 				spr->x = 3900;//Get rid of shot so it doesnt hit more than once
@@ -462,6 +487,14 @@ void updateSprite(SPRITE *spr){
         }
     }
 }
+void testDrawSide(SPRITE *spr, BITMAP *bm[]){
+	if(spr->xspeed<0){//See what direction moving
+		draw_sprite_h_flip(buffer, bm[spr->curframe], (spr->x-mapxoff), (spr->y-mapyoff+1));
+	}else{
+		
+		draw_sprite(buffer, bm[spr->curframe], (spr->x-mapxoff), (spr->y-mapyoff+1));
+	}
+}
 /*Draws all of the sprites in the game to the buffer*/
 void drawSprites(){
 	//draw the player's sprite
@@ -478,15 +511,17 @@ void drawSprites(){
 	}
 	switch(mapName){//Switch on different maps to know what enemies to draw
 		case TRADITION:
-			if(prime->xspeed>0){//Prime
-				draw_sprite(buffer, prime_image[prime->curframe], (prime->x-mapxoff), (prime->y-mapyoff+1));
+			testDrawSide(prime, prime_image);
+			testDrawSide(snek, snek_image);			
+			/*for(j=0;j<FATS;j++){
+				testDrawSide(fat[j], fat_image);
+			}*/			
+			break;
+		case EQUALITY:
+			if(drag->xspeed<0){//Dragon
+				draw_sprite(buffer, drag_image[drag->curframe], (drag->x-mapxoff), (drag->y-mapyoff+1));
 			}else{
-				draw_sprite_h_flip(buffer, prime_image[prime->curframe], (prime->x-mapxoff), (prime->y-mapyoff+1));
-			}
-			if(snek->xspeed<0){//Snek
-				draw_sprite(buffer, snek_image[snek->curframe], (snek->x-mapxoff), (snek->y-mapyoff+1));
-			}else{
-				draw_sprite_h_flip(buffer, snek_image[snek->curframe], (snek->x-mapxoff), (snek->y-mapyoff+1));
+				draw_sprite_h_flip(buffer, drag_image[drag->curframe], (drag->x-mapxoff), (drag->y-mapyoff+1));
 			}
 			break;
 	}
@@ -496,6 +531,8 @@ void handleEnemies(){
 	switch(mapName){//Switch on different maps to know what enemies to draw
 		case TRADITION:
 			//printf(".A");
+			//playAnim(drag, 0, 5);
+			//updateSprite(drag);
 			/*Handle Prime enemy*/
 			if(prime->curframe != 11){//Last frame after dead, stay on it when dead
 				//printf(".B");
@@ -540,6 +577,7 @@ void handleEnemies(){
 			/*Handle Snek enemy*/
 			if(snek->curframe != 11){//Last frame after dead, stay on it when dead
 				if(!snek->alive){//He's dead so play the death animation
+					//printf(".FRAME:%d", snek->curframe);
 					playAnim(snek, 8, 11);
 				}else if(collide(player, snek, 10)){
 					player->health-=10;//player lose health
@@ -552,6 +590,24 @@ void handleEnemies(){
 					}else{//bounce player back to left
 						player->x += 10;
 					}
+				}else if(player->x+player->width > snek->x-20 && player->x+player->width< snek->x+2){//stop player from passing through snake from left side
+					//printf(".IN");
+					playAnim(snek, 4, 7);
+					if(player->x+player->width > snek->x-3){
+						//printf(".IN2");
+						player->x-=10;
+						player->health-=20;						
+					}
+				}else if(player->x > snek->x+snek->width-2 && player->x< snek->x+snek->width+20){//stop player from passing through snake from left side
+					//printf(".IN3");
+					playAnim(snek, 4, 7);
+					if(player->x < snek->x+3){
+						//printf(".IN4");
+						player->x-=10;
+						player->health-=20;						
+					}
+				}else{
+					playAnim(snek, 0, 3);
 				}
 				if(snek->x>1450){
 					snek->xspeed=-2;
@@ -563,25 +619,7 @@ void handleEnemies(){
 				}else{
 					snek->yspeed=0;
 				}
-				if(player->x+player->width > snek->x-20 && player->x+player->width< snek->x+2){//stop player from passing through snake from left side
-					printf(".IN");
-					playAnim(snek, 4, 7);
-					if(player->x+player->width > snek->x-3){
-						printf(".IN2");
-						player->x-=10;
-						player->health-=20;						
-					}
-				}else if(player->x > snek->x+snek->width-2 && player->x< snek->x+snek->width+20){//stop player from passing through snake from left side
-					printf(".IN3");
-					playAnim(snek, 4, 7);
-					if(player->x < snek->x+3){
-						printf(".IN4");
-						player->x-=10;
-						player->health-=20;						
-					}
-				}else{
-					playAnim(snek, 0, 3);
-				}
+				
 				updateSprite(snek);
 			}else{//must be on last frame so just stay on it
 				snek->xspeed=0;
