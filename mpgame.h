@@ -74,7 +74,7 @@ SPRITE *drag;//Equality Enemies
 
 //Integer variables
 int c, n, i, f, j, s, p; //index numbers
-int oldpy, oldpx, mapxoff, mapyoff, pa_start, pa_end; //Misc
+int oldpy, oldpx, mapxoff, mapyoff, pa_start, pa_end, gameOn, selected; //Misc
 int quit, paused, facing, jump, resting, firetime, player_anim, cur_proj, fired, mapName; //Global flags/tracking numbers
 
 

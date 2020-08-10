@@ -371,7 +371,17 @@ void pauseGame(){
 void getInput(){
 	//Check for quit game
 	if(key[KEY_ESC]){
-		quit = 1;
+		gameOn = 1;
+		switch(mapName){
+			case TRADITION:
+				stop_sample(sounds[AM_ANTH]);
+				stop_sample(sounds[MURICA]);//Could be playing so better safe than sorry
+				break;
+			case EQUALITY:
+				stop_sample(sounds[USSR_ANTH]);
+				stop_sample(sounds[USSR_ANTH_R]);//Could be playing so better safe than sorry
+				break;
+		}
 	}
 	if(player->health<=0){//don't allow for control when player dead
 		return;
@@ -767,10 +777,6 @@ void winGame(){
 		}
 	}
 }
-/*Loop used during title screen, handles selection/progression to gameloop or exiting application*/
-void titleLoop(){
-	
-}
 /*The main loop run when game in progress, handles flow of calls and checks as well as updating screen*/
 void gameLoop(){	
     if(keypressed()){ //Get keyboard input when key(s) pressed
@@ -826,10 +832,37 @@ void gameLoop(){
 	//printf(".7");
     release_screen();
 }
+/*Loop used during title screen, handles selection/progression to gameloop or exiting application*/
+void titleLoop(){
+	while(!quit){
+		//Bring up title screen
+		blit(title,screen,0,0,0,0,640,480);		
+		play_sample(sounds[MUSIC], volume, pan, pitch, FALSE);
+		//Wait for input
+		while(!gameOn){//Run game loop
+			while(!selected){//Run title loop
+				if(key[KEY_ESC]){
+					quit = 1;//this will exit all loops
+					selected=1;
+					gameOn=1;
+				}else if(key[KEY_1]){
+					loadLevel("images/tradition_bg/map.FMP");
+					printf(".LOADED");
+					stop_sample(sounds[MUSIC]);//stop title music so it doesnt interfere with level theme
+					selected=1;//just break this loop to start gameloop
+				}
+			}
+			gameLoop();//Plays the game
+		}//Reset
+		selected=0;
+		gameOn=0;
+		rest(100);//wait a bit so escape isn't auto exiting entire game	
+	}
+}
 /*Main function, handles initial loading. Passes on taks to be handled in title/game loop functions. When quit, destroys allocated memory.*/
 int main(void){
     facing = 0, jump = JUMPIT, s = 0, f = 0, p = 0, quit = 0, firetime = -1, player_anim = 0, pa_start = 0, pa_end = 0;
-	fired = 0, cur_proj = 0;
+	fired = 0, cur_proj = 0, gameOn = 0, selected = 0;
 	tempSprite = malloc(sizeof(SPRITE));
 	allegro_init();	
 	install_timer();
@@ -838,7 +871,8 @@ int main(void){
 	lose = load_bitmap("images/gameover.bmp", NULL);//Load gameover screen
 	pause = load_bitmap("images/paused.bmp", NULL);//Load game paused screen
 	bar = load_bitmap("images/bottom_bar.bmp", NULL);//Load bottom screen bar
-	victory_trad = load_bitmap("images/tradition_bg/tradition_win.bmp", NULL);//Load bottom screen bar
+	victory_trad = load_bitmap("images/tradition_bg/tradition_win.bmp", NULL);//Load victory screen
+	title = load_bitmap("images/tradition_bg/tradition_win.bmp", NULL);//Load title screen
     if(set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0)) {
         printf(".GFX_ERROR: ");
 		allegro_message(allegro_error);
@@ -850,7 +884,7 @@ int main(void){
         return 1;
     }
     //load sounds
-    sounds[MUSIC] = load_sample("sounds/house_party.wav");
+    sounds[MUSIC] = load_sample("sounds/title_music.wav");
     sounds[GRUNT] = load_sample("sounds/male_grunt.wav");
     sounds[OH_YEAH] = load_sample("sounds/male_oh_yeah.wav");
     sounds[LAUGH_FAT] = load_sample("sounds/female_laugh.wav");
@@ -864,13 +898,10 @@ int main(void){
     sounds[USSR_ANTH_R] = load_sample("sounds/ussr_anth_r.wav");
     sounds[BURP] = load_sample("sounds/burp.wav");
 	printf(".LOADING");
-	
-//	printf("SCREEN_CODE: %d", screen);//NO idea why but the screen doesn't work sometimes causing the map to fail loading. Using this line helps for some reason
-	
-	/***This is set up this way so that multiple levels can be implemented mroe easily
+	/***This is set up this way so that multiple levels can be implemented more easily
 		Try having level select from title screen or next map loaded when previous finished***/	
-	loadLevel("images/tradition_bg/map.FMP");//loads the specified level and the sprites with it  
-	printf(".LOADED");  
+	//loadLevel("images/tradition_bg/map.FMP");//loads the specified level and the sprites with it  
+  
     //create the double buffer
 	buffer = create_bitmap(WIDTH, HEIGHT);
 	clear(buffer);
@@ -879,7 +910,7 @@ int main(void){
 		//Sudo code for when implementing title screen		
 		//Have gameLoop run while a new flag "playing" is = 1
 		//Have if else in getInput for ESC so if "playing" then only that is turned off to return to title, otherwise "quit" exiting application		
-		gameLoop();//Plays the game
+		titleLoop();//Plays the game
 	} //while
 	//Cleanup
 	printf(".CLEANING");
