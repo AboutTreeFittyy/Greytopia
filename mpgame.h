@@ -16,6 +16,12 @@
 #define FATS 3
 #define TRADITION 0
 #define EQUALITY 1
+#define MUSIC 0
+#define GRUNT 1
+#define OH_YEAH 2
+#define LAUGH_FAT 3
+#define HISS 4
+#define TEXTCOLOUR makecol(0,0,51)
 //define the structure of the sprite
 typedef struct SPRITE{
     int dir, alive, health;
@@ -30,9 +36,14 @@ typedef struct SPRITE{
 }SPRITE;
 
 /***Global variables***/
-
+//Sound
+SAMPLE *sounds[5];
+int volume = 128;
+int pan = 128;
+int pitch = 1000;
 //Art/sprite variables
 BITMAP *intro;
+BITMAP *bar;
 BITMAP *title;
 BITMAP *lose;
 BITMAP *victory;

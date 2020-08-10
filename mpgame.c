@@ -132,7 +132,7 @@ void loadEquality(){
     drag->alive = 1;
 }
 /*Loads the sprites into their struct from their bitmap files*/
-void loadLevel(char * map){   
+void loadLevel(char * map){
 	//load the map
 	if(MapLoad(map)){
 		printf("Error Loading Map Code: %d", n);
@@ -385,6 +385,9 @@ void getInput(){
 	//Check for quit game
 	if(key[KEY_ESC]){
 		quit = 1;
+	}
+	if(player->health<=0){//don't allow for control when player dead
+		return;
 	}
 	if(player_anim == 1 && player->curframe >= pa_start && player->curframe < pa_end){		
 		playAnim(player, pa_start, pa_end);
@@ -643,32 +646,34 @@ void handleEnemies(){
 				}else if(collide(player, snek, 10)){
 					player->health-=10;//player lose health
 					if(snek->xspeed > 0 && player->x > snek->x){//bounce player back to right
-						player->x += 10;
+						player->x += 20;
 					}else if(snek->xspeed > 0 && player->x < snek->x){//bounce player back to left
-						player->x -= 10;
+						player->x -= 20;
 					}else if(snek->xspeed < 0 && player->x < snek->x){//bounce player back to left
-						player->x -= 10;
+						player->x -= 20;
 					}else{//bounce player back to left
-						player->x += 10;
+						player->x += 20;
 					}
 				}else if(player->x+player->width > snek->x-20 && player->x+player->width< snek->x+2){//stop player from passing through snake from left side
 					playAnim(snek, 4, 7);
 					if(player->x+player->width > snek->x-3){
 						player->x-=10;
-						player->health-=20;						
+						play_sample(sounds[HISS], volume, pan, pitch, FALSE);
+						//player->health-=20;						
 					}
 				}else if(player->x > snek->x+snek->width-2 && player->x< snek->x+snek->width+20){//stop player from passing through snake from left side
 					playAnim(snek, 4, 7);
 					if(player->x < snek->x+3){
 						player->x-=10;
-						player->health-=20;						
+						play_sample(sounds[HISS], volume, pan, pitch, FALSE);
+						//player->health-=20;						
 					}
 				}else{
 					playAnim(snek, 0, 3);
 				}
 				if(snek->x>1450){
 					snek->xspeed=-2;
-				}else if(snek->x<800){
+				}else if(snek->x<850){
 					snek->xspeed=2;
 				}
 				if(!collided(snek->x + snek->width/2, snek->y + snek->height)){
@@ -785,12 +790,16 @@ void gameLoop(){
 	if(player->health <= 0){
 		endGame();
 	}
+	
     //blit the double buffer 
 	vsync();
 	//printf(".5");
     acquire_screen();
     //printf(".6");
 	blit(buffer, screen, 0, 0, 0, 0, WIDTH-1, HEIGHT-1);
+	blit(bar,screen,0,0,0,HEIGHT-48,640,48);//add bottom bar to screen
+	textprintf_centre_ex(screen,font,320,HEIGHT-24,TEXTCOLOUR,-1,"HEALTH: %d", player->health);
+	//write info to bar
 	//printf(".7");
     release_screen();
     //printf(".8");
@@ -806,6 +815,7 @@ int main(void){
 	set_color_depth(16);
 	lose = load_bitmap("images/gameover.bmp", NULL);//Load gameover screen
 	pause = load_bitmap("images/paused.bmp", NULL);//Load game paused screen
+	bar = load_bitmap("images/bottom_bar.bmp", NULL);//Load bottom screen bar
     if(set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0)) {
         printf(".GFX_ERROR: ");
 		allegro_message(allegro_error);
@@ -816,6 +826,12 @@ int main(void){
         allegro_message("Error initializing sound system");
         return 1;
     }
+    //load sounds
+    sounds[MUSIC] = load_sample("sounds/house_party.wav");
+    sounds[GRUNT] = load_sample("sounds/male_grunt.wav");
+    sounds[OH_YEAH] = load_sample("sounds/male_oh_yeah.wav");
+    sounds[LAUGH_FAT] = load_sample("sounds/female_laugh.wav");
+    sounds[HISS] = load_sample("sounds/hiss.wav");
 	printf(".LOADING");
 	
 //	printf("SCREEN_CODE: %d", screen);//NO idea why but the screen doesn't work sometimes causing the map to fail loading. Using this line helps for some reason
