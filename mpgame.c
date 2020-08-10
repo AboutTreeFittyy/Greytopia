@@ -770,10 +770,20 @@ void winGame(){
 		return -1;
 	}	
 	release_screen();
-	while(!quit){			
+	while(!gameOn){			
 		//Check for quit game
 		if(key[KEY_ESC]){
-			quit = 1;
+			gameOn = 1;
+			switch(mapName){
+				case TRADITION:
+					stop_sample(sounds[AM_ANTH]);
+					stop_sample(sounds[MURICA]);//Could be playing so better safe than sorry
+					break;
+				case EQUALITY:
+					stop_sample(sounds[USSR_ANTH]);
+					stop_sample(sounds[USSR_ANTH_R]);//Could be playing so better safe than sorry
+					break;
+			}
 		}
 	}
 }
@@ -872,7 +882,7 @@ int main(void){
 	pause = load_bitmap("images/paused.bmp", NULL);//Load game paused screen
 	bar = load_bitmap("images/bottom_bar.bmp", NULL);//Load bottom screen bar
 	victory_trad = load_bitmap("images/tradition_bg/tradition_win.bmp", NULL);//Load victory screen
-	title = load_bitmap("images/tradition_bg/tradition_win.bmp", NULL);//Load title screen
+	title = load_bitmap("images/title_screen.bmp", NULL);//Load title screen
     if(set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0)) {
         printf(".GFX_ERROR: ");
 		allegro_message(allegro_error);
