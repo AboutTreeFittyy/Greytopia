@@ -32,10 +32,15 @@ typedef struct SPRITE{
 /***Global variables***/
 
 //Art/sprite variables
-BITMAP *player_image[32];
+BITMAP *intro;
+BITMAP *title;
+BITMAP *lose;
+BITMAP *victory;
+BITMAP *pause;
+BITMAP *player_image[40];
 BITMAP *prime_image[12];
 BITMAP *snek_image[12];
-BITMAP *fat_image[20];
+BITMAP *fat_image[24];
 BITMAP *drag_image[6];
 BITMAP *paint_image;
 BITMAP *temp;
@@ -48,9 +53,23 @@ SPRITE *fat[FATS];
 SPRITE *prime;
 SPRITE *drag;//Equality Enemies
 
-
-
 //Integer variables
 int c, n, i, f, j; //index numbers
 int oldpy, oldpx, mapxoff, mapyoff, pa_start, pa_end; //Misc
-int quit, facing, jump, resting, firetime, player_anim, cur_proj, fired, mapName; //Global flags/tracking numbers
+int quit, paused, facing, jump, resting, firetime, player_anim, cur_proj, fired, mapName; //Global flags/tracking numbers
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

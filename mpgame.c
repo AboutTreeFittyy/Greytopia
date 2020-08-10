@@ -26,7 +26,7 @@ void playAnim(SPRITE *spr, int start, int endFrame){
 /*Loads in the tradition level assets*/
 void loadTradition(){
 	//load prime robot character sprite
-    temp = load_bitmap("images/chad_prime.bmp", NULL);
+    temp = load_bitmap("images/tradition_bg/chad_prime.bmp", NULL);
     for (n=0; n<12; n++){
 		prime_image[n] = grabFrame(temp,256,256,0,0,4,n);
     }
@@ -48,10 +48,10 @@ void loadTradition(){
     prime->framedelay = 12;
     prime->animdir = 1;
     prime->startFrame = 0;
-    prime->health = 500;
+    prime->health = 200;
     prime->alive = 1;
     //load prime robot character sprite
-    temp = load_bitmap("images/snek_larger.bmp", NULL);
+    temp = load_bitmap("images/tradition_bg/snek_larger.bmp", NULL);
     for (n=0; n<12; n++){
 		snek_image[n] = grabFrame(temp,256,256,0,0,4,n);
     }
@@ -73,9 +73,39 @@ void loadTradition(){
     snek->framedelay = 12;
     snek->animdir = 1;
     snek->startFrame = 0;
-    snek->health = 500;
+    snek->health = 200;
     snek->alive = 1;
-    /*//load dragon character sprite
+    //Load fat enemies
+    temp = load_bitmap("images/tradition_bg/fat.bmp", NULL);
+    for (n=0; n<24; n++){
+		fat_image[n] = grabFrame(temp,88,85,0,0,4,n);
+    }
+    destroy_bitmap(temp);
+	for(n=0;n<FATS;n++){
+		fat[n] = malloc(sizeof(SPRITE));
+	    fat[n]->x = 1250 + (500*n);
+	    fat[n]->y = 125;
+	    fat[n]->width = fat_image[0]->w;
+	    fat[n]->height = fat_image[0]->h;
+	    fat[n]->xdelay = 1;
+	    fat[n]->ydelay = 0;
+	    fat[n]->xcount = 0;
+	    fat[n]->ycount = 0;
+	    fat[n]->xspeed = -2;
+	    fat[n]->yspeed = 0;
+	    fat[n]->curframe = 0;
+	    fat[n]->maxframe = 19;
+	    fat[n]->framecount = 0;
+	    fat[n]->framedelay = 4;
+	    fat[n]->animdir = 1;
+	    fat[n]->startFrame = 0;
+	    fat[n]->health = 100;
+	    fat[n]->alive = 1;
+	}
+}
+/*Loads the equality map*/
+void loadEquality(){
+	//load dragon character sprite
     temp = load_bitmap("images/equality_bg/dragon.bmp", NULL);
     for (n=0; n<6; n++){
 		drag_image[n] = grabFrame(temp,575,264,0,0,6,n);
@@ -99,7 +129,7 @@ void loadTradition(){
     drag->animdir = 1;
     drag->startFrame = 0;
     drag->health = 500;
-    drag->alive = 1;*/
+    drag->alive = 1;
 }
 /*Loads the sprites into their struct from their bitmap files*/
 void loadLevel(char * map){   
@@ -115,8 +145,8 @@ void loadLevel(char * map){
 		break;
 	}
 	//load vlad playable character sprite
-    temp = load_bitmap("images/vlad_all.bmp", NULL);
-    for (n=0; n<32; n++){
+    temp = load_bitmap("images/leo.bmp", NULL);
+    for (n=0; n<40; n++){
 		player_image[n] = grabFrame(temp,64,96,0,0,4,n);
     }
     destroy_bitmap(temp);		
@@ -211,7 +241,8 @@ void checkMelee(int x1, int x2, int y1, int y2){
     tempSprite->height = y1 - y2;
 	switch(mapName){
 		case TRADITION:			
-		    //See if hit box is for front or back
+		    /*Prime*/
+			//See if hit box is for front or back
 			if(player->x < prime->x && prime->xspeed >0){//player on left side and prime walking to right
 				j = collide(tempSprite, prime, 10);
 			}else if(player->x < prime->x && prime->xspeed <0){//Player on left side and prime walking left
@@ -235,6 +266,17 @@ void checkMelee(int x1, int x2, int y1, int y2){
 		    		prime->alive = 0;
 				}else{
 					prime->y-=15;//Bounce when hit to let player know damage is dealt
+				}
+			}
+			/*Fat*/
+			for(j=0;j<FATS;j++){
+			    if(collide(tempSprite, fat[j], 15)){
+			    	fat[j]->health -= 25;
+			    	if(fat[j]->health <= 0){
+			    		fat[j]->alive = 0;
+					}else{
+						fat[j]->y-=15;//Bounce when hit to let player know damage is dealt
+					}
 				}
 			}
 			break;
@@ -305,7 +347,37 @@ void checkFire(SPRITE *spr){
 				spr->x = 3900;//Get rid of shot so it doesnt hit more than once
 			}
 			j=0;
+			/*Fats (Not using as it would make sense to make them only vulnerable to melee*/
+			/*for(c=0; c<FATS;c++){
+				j = collide(spr, fat[c], 10);
+			    if(j && fat[c]->alive){//Check if collided
+			    	fat[c]->health -= 25;
+			    	if(fat[c]->health <= 0){
+			    		fat[c]->alive = 0;
+					}else{
+						fat[c]->y-=25;//Bounce when hit to let player know damage is dealt
+					}
+					spr->y = 600;
+					spr->x = 3900;//Get rid of shot so it doesnt hit more than once
+				}
+				j=0;
+			}*/
 			break;
+	}
+}
+/*Pauses the current game session with options to return to menu*/
+void pauseGame(){
+	//Blit the info screen
+	blit(pause,screen,0,0,WIDTH/2-200,HEIGHT/2-200,400,400);//add image to screen
+	release_screen();
+	paused=0;
+	while(!paused){
+		rest(250);//add delay so that it doesn't pause and unpause from keyboard input stream (I wish the API had a KEY_UP setting)
+		if (key[KEY_P] || key[KEY_H]){//checks for P/H press
+	        if(key_shifts & KB_CTRL_FLAG){//checks if ctrl is held too
+				paused=1;
+			}
+		}
 	}
 }
 /*Input handling function, checks pressed key to see what action to take depending on set flags at time*/
@@ -416,7 +488,12 @@ void getInput(){
 		}else{//continues playing jump animation after jumping
 			playAnim(player, 4, 7);
 		}
-    }else {
+    }else if (key[KEY_P] || key[KEY_H]){//checks for P/H press
+        if(key_shifts & KB_CTRL_FLAG){//checks if ctrl is held too
+			pauseGame();
+			rest(250);//add delay so that it doesn't pause and unpause from keyboard input stream (I wish the API had a KEY_UP setting)
+		}
+	}else {
 		player->xspeed=0;
 	}	
 	//More stuff for handling Jumping
@@ -513,16 +590,12 @@ void drawSprites(){
 		case TRADITION:
 			testDrawSide(prime, prime_image);
 			testDrawSide(snek, snek_image);			
-			/*for(j=0;j<FATS;j++){
+			for(j=0;j<FATS;j++){
 				testDrawSide(fat[j], fat_image);
-			}*/			
+			}		
 			break;
 		case EQUALITY:
-			if(drag->xspeed<0){//Dragon
-				draw_sprite(buffer, drag_image[drag->curframe], (drag->x-mapxoff), (drag->y-mapyoff+1));
-			}else{
-				draw_sprite_h_flip(buffer, drag_image[drag->curframe], (drag->x-mapxoff), (drag->y-mapyoff+1));
-			}
+			testDrawSide(drag, drag_image);	
 			break;
 	}
 }
@@ -530,12 +603,8 @@ void drawSprites(){
 void handleEnemies(){
 	switch(mapName){//Switch on different maps to know what enemies to draw
 		case TRADITION:
-			//printf(".A");
-			//playAnim(drag, 0, 5);
-			//updateSprite(drag);
 			/*Handle Prime enemy*/
 			if(prime->curframe != 11){//Last frame after dead, stay on it when dead
-				//printf(".B");
 				if(!prime->alive){//He's dead so play the death animation
 					playAnim(prime, 8, 11);
 				}else if(collide(player, prime, 10)){
@@ -552,32 +621,24 @@ void handleEnemies(){
 				}
 				if(player->x>3000){
 					prime->xspeed = -(PLAYERSPEED-1);
-					//printf(".PRIMEY:%d", prime->y);
-					//printf(".PRIMEX:%d", prime->x);
 				}
-				//printf(".Q");
-				/*if(prime->x>3000){//used if keeping in certain area
-					prime->xspeed=-2;
-				}else */if(prime->x<10){//prevents game crash from prime running off screen
+				if(prime->x<10){//prevents game crash from prime running off screen
 					prime->xspeed=2;
+				}else if(prime->x> 3700){
+					prime->xspeed=-2;
 				}
-				//printf(".R");
 				if(!collided(prime->x + prime->width/2, prime->y + prime->height)){
 		        	prime->yspeed=1; 
 				}else{
 					prime->yspeed=0;
 				}
-				//printf(".S");
 				updateSprite(prime);
-				//printf(".T");
 			}else{//must be on last frame so just stay on it
 				prime->xspeed=0;
 			}	
-			//printf(".C");
 			/*Handle Snek enemy*/
 			if(snek->curframe != 11){//Last frame after dead, stay on it when dead
 				if(!snek->alive){//He's dead so play the death animation
-					//printf(".FRAME:%d", snek->curframe);
 					playAnim(snek, 8, 11);
 				}else if(collide(player, snek, 10)){
 					player->health-=10;//player lose health
@@ -591,18 +652,14 @@ void handleEnemies(){
 						player->x += 10;
 					}
 				}else if(player->x+player->width > snek->x-20 && player->x+player->width< snek->x+2){//stop player from passing through snake from left side
-					//printf(".IN");
 					playAnim(snek, 4, 7);
 					if(player->x+player->width > snek->x-3){
-						//printf(".IN2");
 						player->x-=10;
 						player->health-=20;						
 					}
 				}else if(player->x > snek->x+snek->width-2 && player->x< snek->x+snek->width+20){//stop player from passing through snake from left side
-					//printf(".IN3");
 					playAnim(snek, 4, 7);
 					if(player->x < snek->x+3){
-						//printf(".IN4");
 						player->x-=10;
 						player->health-=20;						
 					}
@@ -618,15 +675,71 @@ void handleEnemies(){
 		        	snek->yspeed=1; 
 				}else{
 					snek->yspeed=0;
-				}
-				
+				}				
 				updateSprite(snek);
 			}else{//must be on last frame so just stay on it
 				snek->xspeed=0;
-			}				
+			}	
+			/*Fats*/
+			for(j=0;j<FATS;j++){
+				if(fat[j]->curframe != 23){//Last frame after dead, stay on it when dead
+					if(!fat[j]->alive){//He's dead so play the death animation
+						playAnim(fat[j], 20, 23);
+					}else if(collide(player, fat[j], 5)){
+						player->health-=10;//player lose health
+						if(fat[j]->xspeed > 0 && player->x > fat[j]->x){//bounce player back to right
+							player->x += 10;
+						}else if(fat[j]->xspeed > 0 && player->x < fat[j]->x){//bounce player back to left
+							player->x -= 10;
+						}else if(fat[j]->xspeed < 0 && player->x < fat[j]->x){//bounce player back to left
+							player->x -= 10;
+						}else{//bounce player back to left
+							player->x += 10;
+						}
+					}else{
+						playAnim(fat[j], 0, 19);
+					}
+					if(fat[j]->x>1350 + (500*j)){
+						fat[j]->xspeed=-2;
+					}else if(fat[j]->x<1150 + (500*j)){
+						fat[j]->xspeed=2;
+					}
+					if(!collided(fat[j]->x + fat[j]->width/2, fat[j]->y-4 + fat[j]->height)){
+			        	fat[j]->yspeed=1; 
+					}else{
+						fat[j]->yspeed=0;
+					}				
+					updateSprite(fat[j]);
+				}else{//must be on last frame so just stay on it
+					fat[j]->xspeed=0;
+				}
+			}			
+			break;
+		case EQUALITY:
+			playAnim(drag, 0, 5);
+			updateSprite(drag);
 			break;
 	}
 	//printf(".Z");
+}
+/*Ends the current game seesion with options to return to menu*/
+void endGame(){
+	//Play death animation
+	if(mapName == TRADITION && player->curframe != 35){//check hasn't finished animation
+		playAnim(player,32,35);
+	}else if(mapName == EQUALITY && player->curframe != 39){
+		playAnim(player,36,39);
+	}else{//Dead now, prompt for decision
+		//Blit the info screen
+		blit(lose,screen,0,0,WIDTH/2-128,HEIGHT/2-128,256,256);//add image to screen
+		release_screen();
+		while(!quit){			
+			//Check for quit game
+			if(key[KEY_ESC]){
+				quit = 1;
+			}
+		}
+	}
 }
 /*Loop used during title screen, handles selection/progression to gameloop or exiting application*/
 void titleLoop(){
@@ -641,8 +754,10 @@ void gameLoop(){
 	oldpy = player->y; 
     oldpx = player->x;
 	updateSprite(player);//Update player sprite
+	//printf(".1-2");
 	for(n=0;n<NUMPROJ;n++){//Update the player projectiles
 		updateSprite(proj_paint[n]);
+		//printf(".1-3");
 		checkFire(proj_paint[n]);//Check for collisions with enemies
 	}	
 	//printf(".2");
@@ -666,6 +781,10 @@ void gameLoop(){
 	    	player->xspeed = 0;
 		}
 	}
+	//Check player is alive
+	if(player->health <= 0){
+		endGame();
+	}
     //blit the double buffer 
 	vsync();
 	//printf(".5");
@@ -685,6 +804,8 @@ int main(void){
 	install_timer();
 	install_keyboard();
 	set_color_depth(16);
+	lose = load_bitmap("images/gameover.bmp", NULL);//Load gameover screen
+	pause = load_bitmap("images/paused.bmp", NULL);//Load game paused screen
     if(set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0)) {
         printf(".GFX_ERROR: ");
 		allegro_message(allegro_error);
