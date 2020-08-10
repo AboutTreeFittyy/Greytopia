@@ -102,6 +102,8 @@ void loadTradition(){
 	    fat[n]->health = 100;
 	    fat[n]->alive = 1;
 	}
+	//play music
+	play_sample(sounds[AM_ANTH], volume-50, pan, pitch, FALSE);
 }
 /*Loads the equality map*/
 void loadEquality(){
@@ -261,7 +263,8 @@ void checkMelee(int x1, int x2, int y1, int y2){
 				j = collide(tempSprite, prime, 10);
 			}
 		    if(j){
-		    	prime->health -= 25;
+		    	play_sample(sounds[SLUSH], volume, pan, pitch, FALSE);
+				prime->health -= 25;
 		    	if(prime->health <= 0){
 		    		prime->alive = 0;
 				}else{
@@ -271,7 +274,8 @@ void checkMelee(int x1, int x2, int y1, int y2){
 			/*Fat*/
 			for(j=0;j<FATS;j++){
 			    if(collide(tempSprite, fat[j], 15)){
-			    	fat[j]->health -= 25;
+			    	play_sample(sounds[SLUSH], volume, pan, pitch, FALSE);
+					fat[j]->health -= 25;
 			    	if(fat[j]->health <= 0){
 			    		fat[j]->alive = 0;
 					}else{
@@ -286,24 +290,23 @@ void checkMelee(int x1, int x2, int y1, int y2){
 /*Check for any collision with the maps given enemies and the projectiles*/
 void checkFire(SPRITE *spr){
 	j=0;
-	//printf(".1");
 	/*Stop projectile when collides with wall/platform*/
-	if(collided(spr->x,spr->y+spr->height/2) && spr->xspeed < 0){
+	if(collided(spr->x,spr->y+spr->height/2) && spr->xspeed < 0){//moving left
 		spr->y = 600;
 		spr->x = 3900;
 		spr->xspeed=0;
-	}else if(collided(spr->x+spr->width,spr->y+spr->height/2) && spr->xspeed > 0){
+		play_sample(sounds[SLUSH], volume, pan, pitch, FALSE);
+	}else if(collided(spr->x+60,spr->y+spr->height/2) && spr->xspeed > 0){//moving right
 		spr->y = 600;
 		spr->x = 3900;
 		spr->xspeed=0;
+		play_sample(sounds[SLUSH], volume, pan, pitch, FALSE);
 	}
-	//printf(".2");
 	/*Switch on what map playing to see what enemies there are for updating*/
 	switch(mapName){
 		case TRADITION:
 			/*Prime*/
 			//See if hit box is for front or back
-			//printf(".A");
 			if(player->x < prime->x && prime->xspeed >0){//player on left side and prime walking to right
 				j = collide(spr, prime, 10);
 			}else if(player->x < prime->x && prime->xspeed <0){//Player on left side and prime walking left
@@ -321,9 +324,9 @@ void checkFire(SPRITE *spr){
 			}else if(player->x > prime->x && prime->xspeed <0){//Player on right side and prime walkiing left
 				j = collide(spr, prime, 10);
 			}
-			//printf(".D");
 		    if(j){//Check if collided
-		    	prime->health -= 25;
+		    	play_sample(sounds[SLUSH], volume, pan, pitch, FALSE);
+				prime->health -= 25;
 		    	if(prime->health <= 0){
 		    		prime->alive = 0;
 				}else{
@@ -332,7 +335,6 @@ void checkFire(SPRITE *spr){
 				spr->y = 600;
 				spr->x = 3900;//Get rid of shot so it doesnt hit more than once
 			}
-			//printf(".Z");
 			j=0;
 			/*Snek*/
 			j = collide(spr, snek, 10);
@@ -347,21 +349,6 @@ void checkFire(SPRITE *spr){
 				spr->x = 3900;//Get rid of shot so it doesnt hit more than once
 			}
 			j=0;
-			/*Fats (Not using as it would make sense to make them only vulnerable to melee*/
-			/*for(c=0; c<FATS;c++){
-				j = collide(spr, fat[c], 10);
-			    if(j && fat[c]->alive){//Check if collided
-			    	fat[c]->health -= 25;
-			    	if(fat[c]->health <= 0){
-			    		fat[c]->alive = 0;
-					}else{
-						fat[c]->y-=25;//Bounce when hit to let player know damage is dealt
-					}
-					spr->y = 600;
-					spr->x = 3900;//Get rid of shot so it doesnt hit more than once
-				}
-				j=0;
-			}*/
 			break;
 	}
 }
@@ -439,6 +426,7 @@ void getInput(){
 				proj_paint[cur_proj]->y=player->y;
 				proj_paint[cur_proj]->xspeed=6;
 			}
+			play_sample(sounds[SQUIRT], volume, pan, pitch, FALSE);
 			fired = 1;
 			cur_proj++;
 		}else if(player->curframe == n){//keep fired flag on while on this frame
@@ -465,9 +453,9 @@ void getInput(){
 		}
 		if(player->curframe == n && fired == 0){				
 			if(facing == 0){//melee left
-				checkMelee(player->x-40, player->x, player->y - 10, player->y - 60);
+				checkMelee(player->x-60, player->x, player->y - 10, player->y - 60);
 			}else{//melee right
-				checkMelee(player->x+player->width, player->x+player->width+40, player->y - 10, player->y - 60);
+				checkMelee(player->x+player->width, player->x+player->width+60, player->y - 10, player->y - 60);
 			}
 			fired = 1;
 		}else if(player->curframe == n){//keep fired flag on while on this frame
@@ -592,7 +580,12 @@ void drawSprites(){
 	switch(mapName){//Switch on different maps to know what enemies to draw
 		case TRADITION:
 			testDrawSide(prime, prime_image);
-			testDrawSide(snek, snek_image);			
+			if(player->x<snek->x+snek->width/2){//See what direction player is relative to us so we always face them
+				draw_sprite_h_flip(buffer, snek_image[snek->curframe], (snek->x-mapxoff), (snek->y-mapyoff+1));
+			}else{
+				
+				draw_sprite(buffer, snek_image[snek->curframe], (snek->x-mapxoff), (snek->y-mapyoff+1));
+			}		
 			for(j=0;j<FATS;j++){
 				testDrawSide(fat[j], fat_image);
 			}		
@@ -612,6 +605,7 @@ void handleEnemies(){
 					playAnim(prime, 8, 11);
 				}else if(collide(player, prime, 10)){
 					player->health-=10;//player lose health
+					play_sample(sounds[LASER], volume, pan, pitch, FALSE);
 					if(prime->xspeed > 0 && player->x > prime->x){//bounce player back to right
 						player->x += 10;
 					}else if(prime->xspeed > 0 && player->x < prime->x){//bounce player back to left
@@ -622,8 +616,11 @@ void handleEnemies(){
 						player->x += 10;
 					}
 				}
-				if(player->x>3000){
+				if(player->x>3150 && p!=1){
 					prime->xspeed = -(PLAYERSPEED-1);
+					p=1;
+					stop_sample(sounds[AM_ANTH]);
+					play_sample(sounds[MURICA], volume+164, pan, pitch, FALSE);
 				}
 				if(prime->x<10){//prevents game crash from prime running off screen
 					prime->xspeed=2;
@@ -633,11 +630,14 @@ void handleEnemies(){
 				if(!collided(prime->x + prime->width/2, prime->y + prime->height)){
 		        	prime->yspeed=1; 
 				}else{
-					prime->yspeed=0;
+					prime->yspeed=0;					
 				}
 				updateSprite(prime);
-			}else{//must be on last frame so just stay on it
+			}else if(prime->xspeed!=0){
 				prime->xspeed=0;
+				play_sample(sounds[AM_ANTH], volume+50, pan, pitch, FALSE);
+			}else{//must be on last frame so just stay on it
+				stop_sample(sounds[MURICA]);				
 			}	
 			/*Handle Snek enemy*/
 			if(snek->curframe != 11){//Last frame after dead, stay on it when dead
@@ -654,20 +654,18 @@ void handleEnemies(){
 					}else{//bounce player back to left
 						player->x += 20;
 					}
+					playAnim(snek, 4, 7);
+					stop_sample(sounds[HISS]);
+					play_sample(sounds[HISS], volume, pan, pitch, FALSE);
 				}else if(player->x+player->width > snek->x-20 && player->x+player->width< snek->x+2){//stop player from passing through snake from left side
 					playAnim(snek, 4, 7);
-					if(player->x+player->width > snek->x-3){
-						player->x-=10;
-						play_sample(sounds[HISS], volume, pan, pitch, FALSE);
-						//player->health-=20;						
-					}
-				}else if(player->x > snek->x+snek->width-2 && player->x< snek->x+snek->width+20){//stop player from passing through snake from left side
+					s=4;
+				}else if(player->x > snek->x+snek->width && player->x< snek->x+snek->width+20){//stop player from passing through snake from left side
 					playAnim(snek, 4, 7);
-					if(player->x < snek->x+3){
-						player->x-=10;
-						play_sample(sounds[HISS], volume, pan, pitch, FALSE);
-						//player->health-=20;						
-					}
+					s=4;
+				}else if(s != 0){
+					s--;
+					playAnim(snek, 4, 7);
 				}else{
 					playAnim(snek, 0, 3);
 				}
@@ -688,21 +686,27 @@ void handleEnemies(){
 			/*Fats*/
 			for(j=0;j<FATS;j++){
 				if(fat[j]->curframe != 23){//Last frame after dead, stay on it when dead
+					
 					if(!fat[j]->alive){//He's dead so play the death animation
 						playAnim(fat[j], 20, 23);
-					}else if(collide(player, fat[j], 5)){
+					}else if(collide(player, fat[j], 2) && f <=0){
+						f=10;
+						fat[j]->xspeed=-fat[j]->xspeed;
+						stop_sample(sounds[BURP]);
+						play_sample(sounds[BURP], volume, pan, pitch, FALSE);
 						player->health-=10;//player lose health
 						if(fat[j]->xspeed > 0 && player->x > fat[j]->x){//bounce player back to right
-							player->x += 10;
+							player->x += 20;
 						}else if(fat[j]->xspeed > 0 && player->x < fat[j]->x){//bounce player back to left
-							player->x -= 10;
+							player->x -= 20;
 						}else if(fat[j]->xspeed < 0 && player->x < fat[j]->x){//bounce player back to left
-							player->x -= 10;
+							player->x -= 20;
 						}else{//bounce player back to left
-							player->x += 10;
+							player->x += 20;
 						}
 					}else{
 						playAnim(fat[j], 0, 19);
+						f--;
 					}
 					if(fat[j]->x>1350 + (500*j)){
 						fat[j]->xspeed=-2;
@@ -725,7 +729,6 @@ void handleEnemies(){
 			updateSprite(drag);
 			break;
 	}
-	//printf(".Z");
 }
 /*Ends the current game seesion with options to return to menu*/
 void endGame(){
@@ -790,7 +793,6 @@ void gameLoop(){
 	if(player->health <= 0){
 		endGame();
 	}
-	
     //blit the double buffer 
 	vsync();
 	//printf(".5");
@@ -802,11 +804,10 @@ void gameLoop(){
 	//write info to bar
 	//printf(".7");
     release_screen();
-    //printf(".8");
 }
 /*Main function, handles initial loading. Passes on taks to be handled in title/game loop functions. When quit, destroys allocated memory.*/
 int main(void){
-    facing = 0, jump = JUMPIT, quit = 0, firetime = -1, player_anim = 0, pa_start = 0, pa_end = 0;
+    facing = 0, jump = JUMPIT, s = 0, f = 0, p = 0, quit = 0, firetime = -1, player_anim = 0, pa_start = 0, pa_end = 0;
 	fired = 0, cur_proj = 0;
 	tempSprite = malloc(sizeof(SPRITE));
 	allegro_init();	
@@ -832,6 +833,14 @@ int main(void){
     sounds[OH_YEAH] = load_sample("sounds/male_oh_yeah.wav");
     sounds[LAUGH_FAT] = load_sample("sounds/female_laugh.wav");
     sounds[HISS] = load_sample("sounds/hiss.wav");
+    sounds[AM_ANTH] = load_sample("sounds/amer_anth.wav");
+    sounds[USSR_ANTH] = load_sample("sounds/ussr_anth.wav");
+    sounds[MURICA] = load_sample("sounds/murica.wav");
+    sounds[SQUIRT] = load_sample("sounds/squirt.wav");
+    sounds[SLUSH] = load_sample("sounds/slush.wav");
+    sounds[LASER] = load_sample("sounds/laser.wav");
+    sounds[USSR_ANTH_R] = load_sample("sounds/ussr_anth_r.wav");
+    sounds[BURP] = load_sample("sounds/burp.wav");
 	printf(".LOADING");
 	
 //	printf("SCREEN_CODE: %d", screen);//NO idea why but the screen doesn't work sometimes causing the map to fail loading. Using this line helps for some reason
