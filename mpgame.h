@@ -54,7 +54,7 @@ BITMAP *intro;
 BITMAP *bar;
 BITMAP *title;
 BITMAP *lose;
-BITMAP *victory;
+BITMAP *victory_trad;
 BITMAP *pause;
 BITMAP *player_image[40];
 BITMAP *prime_image[12];

@@ -617,7 +617,7 @@ void handleEnemies(){
 					}
 				}
 				if(player->x>3150 && p!=1){
-					prime->xspeed = -(PLAYERSPEED-1);
+					prime->xspeed = -(PLAYERSPEED);
 					p=1;
 					stop_sample(sounds[AM_ANTH]);
 					play_sample(sounds[MURICA], volume+164, pan, pitch, FALSE);
@@ -635,7 +635,7 @@ void handleEnemies(){
 				updateSprite(prime);
 			}else if(prime->xspeed!=0){
 				prime->xspeed=0;
-				play_sample(sounds[AM_ANTH], volume+50, pan, pitch, FALSE);
+				play_sample(sounds[AM_ANTH], volume+50, pan, pitch-500, FALSE);
 			}else{//must be on last frame so just stay on it
 				stop_sample(sounds[MURICA]);				
 			}	
@@ -749,6 +749,24 @@ void endGame(){
 		}
 	}
 }
+/*Ends game but for a winning scenario*/
+void winGame(){
+	play_sample(sounds[OH_YEAH], volume, pan, pitch+100, FALSE);//play game win sound effect
+	if(mapName == TRADITION){
+		blit(victory_trad,screen,0,0,0,0,640,480);//add image to screen
+	}else if(mapName == EQUALITY){
+		
+	}else{
+		return -1;
+	}	
+	release_screen();
+	while(!quit){			
+		//Check for quit game
+		if(key[KEY_ESC]){
+			quit = 1;
+		}
+	}
+}
 /*Loop used during title screen, handles selection/progression to gameloop or exiting application*/
 void titleLoop(){
 	
@@ -793,6 +811,9 @@ void gameLoop(){
 	if(player->health <= 0){
 		endGame();
 	}
+	if(player->x>3800){
+		winGame();
+	}
     //blit the double buffer 
 	vsync();
 	//printf(".5");
@@ -817,6 +838,7 @@ int main(void){
 	lose = load_bitmap("images/gameover.bmp", NULL);//Load gameover screen
 	pause = load_bitmap("images/paused.bmp", NULL);//Load game paused screen
 	bar = load_bitmap("images/bottom_bar.bmp", NULL);//Load bottom screen bar
+	victory_trad = load_bitmap("images/tradition_bg/tradition_win.bmp", NULL);//Load bottom screen bar
     if(set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0)) {
         printf(".GFX_ERROR: ");
 		allegro_message(allegro_error);
