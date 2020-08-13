@@ -565,6 +565,7 @@ void updateSprite(SPRITE *spr){
         }
     }
 }
+/*Checks which way a sprite shouldbe displayed and then displays it*/
 void testDrawSide(SPRITE *spr, BITMAP *bm[]){
 	if(spr->xspeed<0){//See what direction moving
 		draw_sprite_h_flip(buffer, bm[spr->curframe], (spr->x-mapxoff), (spr->y-mapyoff+1));
@@ -605,6 +606,14 @@ void drawSprites(){
 			break;
 	}
 }
+/*Adds gravity to sprite, stopping when colliding with blocks*/
+void gravity(SPRITE *spr){
+	if(!collided(spr->x + spr->width/2, spr->y + spr->height)){
+    	spr->yspeed=1; 
+	}else{
+		spr->yspeed=0;					
+	}
+}
 /*Handles enemy updates and events*/
 void handleEnemies(){
 	switch(mapName){//Switch on different maps to know what enemies to draw
@@ -617,19 +626,18 @@ void handleEnemies(){
 					player->health-=10;//player lose health
 					play_sample(sounds[LASER], volume, pan, pitch, FALSE);
 					if(prime->xspeed > 0 && player->x > prime->x){//bounce player back to right
-						player->x += 10;
+						player->x += 30;
 					}else if(prime->xspeed > 0 && player->x < prime->x){//bounce player back to left
-						player->x -= 10;
+						player->x -= 30;
 					}else if(prime->xspeed < 0 && player->x < prime->x){//bounce player back to left
-						player->x -= 10;
+						player->x -= 30;
 					}else{//bounce player back to left
-						player->x += 10;
+						player->x += 30;
 					}
 				}
 				if(player->x>3150 && p!=1){
 					prime->xspeed = -(PLAYERSPEED);
-					p=1;
-					stop_sample(sounds[AM_ANTH]);
+					p=1;					
 					play_sample(sounds[MURICA], volume+164, pan, pitch, FALSE);
 				}
 				if(prime->x<10){//prevents game crash from prime running off screen
@@ -637,14 +645,11 @@ void handleEnemies(){
 				}else if(prime->x> 3700){
 					prime->xspeed=-2;
 				}
-				if(!collided(prime->x + prime->width/2, prime->y + prime->height)){
-		        	prime->yspeed=1; 
-				}else{
-					prime->yspeed=0;					
-				}
+				gravity(prime);
 				updateSprite(prime);
 			}else if(prime->xspeed!=0){
 				prime->xspeed=0;
+				stop_sample(sounds[AM_ANTH]);
 				play_sample(sounds[AM_ANTH], volume+50, pan, pitch-500, FALSE);
 			}else{//must be on last frame so just stay on it
 				stop_sample(sounds[MURICA]);				
@@ -684,22 +689,17 @@ void handleEnemies(){
 				}else if(snek->x<850){
 					snek->xspeed=2;
 				}
-				if(!collided(snek->x + snek->width/2, snek->y + snek->height)){
-		        	snek->yspeed=1; 
-				}else{
-					snek->yspeed=0;
-				}				
+				gravity(snek);			
 				updateSprite(snek);
 			}else{//must be on last frame so just stay on it
 				snek->xspeed=0;
 			}	
 			/*Fats*/
 			for(j=0;j<FATS;j++){
-				if(fat[j]->curframe != 23){//Last frame after dead, stay on it when dead
-					
+				if(fat[j]->curframe != 23){//Last frame after dead, stay on it when dead					
 					if(!fat[j]->alive){//He's dead so play the death animation
 						playAnim(fat[j], 20, 23);
-					}else if(collide(player, fat[j], 2) && f <=0){
+					}else if(collide(fat[j], player,  10) && f <=0){
 						f=10;
 						fat[j]->xspeed=-fat[j]->xspeed;
 						stop_sample(sounds[BURP]);
@@ -723,11 +723,7 @@ void handleEnemies(){
 					}else if(fat[j]->x<1150 + (500*j)){
 						fat[j]->xspeed=2;
 					}
-					if(!collided(fat[j]->x + fat[j]->width/2, fat[j]->y-4 + fat[j]->height)){
-			        	fat[j]->yspeed=1; 
-					}else{
-						fat[j]->yspeed=0;
-					}				
+					gravity(fat[j]);			
 					updateSprite(fat[j]);
 				}else{//must be on last frame so just stay on it
 					fat[j]->xspeed=0;
@@ -798,6 +794,7 @@ void gameLoop(){
 	updateSprite(player);//Update player sprite
 	//printf(".1-2");
 	for(n=0;n<NUMPROJ;n++){//Update the player projectiles
+		gravity(proj_paint[n]);
 		updateSprite(proj_paint[n]);
 		//printf(".1-3");
 		checkFire(proj_paint[n]);//Check for collisions with enemies
@@ -897,29 +894,22 @@ int main(void){
     sounds[MUSIC] = load_sample("sounds/title_music.wav");
     sounds[GRUNT] = load_sample("sounds/male_grunt.wav");
     sounds[OH_YEAH] = load_sample("sounds/male_oh_yeah.wav");
-    sounds[LAUGH_FAT] = load_sample("sounds/female_laugh.wav");
+    //sounds[LAUGH_FAT] = load_sample("sounds/female_laugh.wav");
     sounds[HISS] = load_sample("sounds/hiss.wav");
     sounds[AM_ANTH] = load_sample("sounds/amer_anth.wav");
     sounds[USSR_ANTH] = load_sample("sounds/ussr_anth.wav");
-    sounds[MURICA] = load_sample("sounds/murica.wav");
+    sounds[MURICA] = load_sample("sounds/prime.wav");
     sounds[SQUIRT] = load_sample("sounds/squirt.wav");
     sounds[SLUSH] = load_sample("sounds/slush.wav");
     sounds[LASER] = load_sample("sounds/laser.wav");
     sounds[USSR_ANTH_R] = load_sample("sounds/ussr_anth_r.wav");
     sounds[BURP] = load_sample("sounds/burp.wav");
 	printf(".LOADING");
-	/***This is set up this way so that multiple levels can be implemented more easily
-		Try having level select from title screen or next map loaded when previous finished***/	
-	//loadLevel("images/tradition_bg/map.FMP");//loads the specified level and the sprites with it  
-  
     //create the double buffer
 	buffer = create_bitmap(WIDTH, HEIGHT);
 	clear(buffer);
     //master loop
 	while(!quit){		
-		//Sudo code for when implementing title screen		
-		//Have gameLoop run while a new flag "playing" is = 1
-		//Have if else in getInput for ESC so if "playing" then only that is turned off to return to title, otherwise "quit" exiting application		
 		titleLoop();//Plays the game
 	} //while
 	//Cleanup
