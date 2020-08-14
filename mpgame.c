@@ -102,6 +102,10 @@ void loadTradition(){
 	    fat[n]->health = 100;
 	    fat[n]->alive = 1;
 	}
+	//Load music
+	sounds[HISS] = load_sample("sounds/hiss.wav");
+    sounds[AM_ANTH] = load_sample("sounds/amer_anth.wav");
+    sounds[MURICA] = load_sample("sounds/prime.wav");
 	//play music
 	play_sample(sounds[AM_ANTH], volume-50, pan, pitch, FALSE);
 }
@@ -133,15 +137,11 @@ void loadEquality(){
     drag->startFrame = 0;
     drag->health = 100;
     drag->alive = 1;
-    //printf("1");
 	//Load commie enemies
     temp = load_bitmap("images/equality_bg/commie.bmp", NULL);
-    //printf("2");
     for (n=0; n<14; n++){
-		//printf("H%d",n);
 		commie_image[n] = grabFrame(temp,45,59,0,0,9,n);
     }
-    //printf("3");
     destroy_bitmap(temp);
 	for(n=0;n<COMMIES;n++){
 		commie[n] = malloc(sizeof(SPRITE));
@@ -190,16 +190,29 @@ void loadEquality(){
 		    star[j]->alive = 1;
 		}
 	}
+	//Load sounds
+	sounds[USSR_ANTH_R] = load_sample("sounds/ussr_anth_r.wav");
+	sounds[USSR_ANTH] = load_sample("sounds/ussr_anth.wav");
 	//play music
 	play_sample(sounds[USSR_ANTH], volume-50, pan, pitch, FALSE);
 }
 /*Loads the sprites into their struct from their bitmap files*/
 void loadLevel(char * map){
+	//Reset in case not first level loaded
+	facing = 0, jump = JUMPIT, s = 0, f = 0, p = 0, firetime = -1, player_anim = 0, pa_start = 0, pa_end = 0;
+	fired = 0, cur_proj = 0;
 	//load the map
 	if(MapLoad(map)){
 		printf("Error Loading Map Code: %d", n);
 		exit(1);
 	}
+	//Load in sounds for all levels
+	sounds[GRUNT] = load_sample("sounds/male_grunt.wav");
+    sounds[OH_YEAH] = load_sample("sounds/male_oh_yeah.wav");
+    sounds[SQUIRT] = load_sample("sounds/squirt.wav");
+    sounds[SLUSH] = load_sample("sounds/slush.wav");
+    sounds[LASER] = load_sample("sounds/laser.wav");
+    sounds[BURP] = load_sample("sounds/burp.wav");
 	//Eventually if more levels are built, add a parameter to pass the value for this
 	switch(mapName){
 		case TRADITION: loadTradition();
@@ -411,6 +424,40 @@ void checkFire(SPRITE *spr){
 			}
 			j=0;
 			break;
+		case EQUALITY:
+			/*DRAGON*/
+			j=0;
+			//See if hit box is for front or back
+			if(player->x < drag->x && drag->xspeed >0){//player on left side and drag walking to right
+				j = collide(spr, drag, 10);
+			}else if(player->x < drag->x && drag->xspeed <0){//Player on left side and drag walking left
+				tempSprite->x = drag->x+(drag->width/2);
+			    tempSprite->y = drag->y;
+			    tempSprite->width = drag->width/2;
+			    tempSprite->height = drag->height;
+				j = collide(spr, tempSprite, 10);
+			}else if(player->x > drag->x && drag->xspeed >0){//Player on right side and drag walking right
+				tempSprite->x = drag->x;
+			    tempSprite->y = drag->y;
+			    tempSprite->width = drag->width/2;
+			    tempSprite->height = drag->height;
+				j = collide(spr, tempSprite, 10);
+			}else if(player->x > drag->x && drag->xspeed <0){//Player on right side and drag walkiing left
+				j = collide(spr, drag, 10);
+			}
+		    if(j){//Check if collided
+		    	play_sample(sounds[SLUSH], volume, pan, pitch, FALSE);
+				drag->health -= 25;
+		    	if(drag->health <= 0){
+		    		drag->alive = 0;
+				}else{
+					drag->y-=15;//Bounce when hit to let player know damage is dealt
+				}
+				spr->y = 600;
+				spr->x = 3900;//Get rid of shot so it doesnt hit more than once
+			}
+			j=0;
+		break;
 	}
 }
 /*Pauses the current game session with options to return to menu*/
@@ -823,7 +870,7 @@ void handleEnemies(){
 							player->x += 20;
 						}
 					}else{//no collision just keep animating and try to fire
-						if(commie[j]->cnt >40){//Check if enough frames gone by to fire
+						if(commie[j]->cnt >60){//Check if enough frames gone by to fire
 							commie[j]->cnt=0;
 							if(commie[j]->dir>=(j*NUMPROJ+NUMPROJ)){//Reset projectile list to restart using projectiles from bottom
 								commie[j]->dir=j*NUMPROJ;
@@ -857,9 +904,17 @@ void handleEnemies(){
 			}	
 			/*Now just to Update the bullets*/
 			for(n=0;n<NUMPROJ*COMMIES;n++){//Update the enemy projectiles
-				//gravity(star[n]);
 				updateSprite(star[n]);
-				//checkFire(star[n]);//Check for collisions with enemies
+				/*Stop projectile when collides with wall/platform*/
+				if(collided(star[n]->x,star[n]->y+star[n]->height/2) && star[n]->xspeed < 0){//moving left
+					star[n]->y = 600;
+					star[n]->x = 3900;
+					star[n]->xspeed=0;
+				}else if(collided(star[n]->x+60,star[n]->y+star[n]->height/2) && star[n]->xspeed > 0){//moving right
+					star[n]->y = 600;
+					star[n]->x = 3900;
+					star[n]->xspeed=0;
+				}
 			}
 			/*Dragon*/
 			if(drag->curframe != 11){//Last frame after dead, stay on it when dead
@@ -879,10 +934,11 @@ void handleEnemies(){
 					}
 				}
 				if(player->x>3150 && p!=1){
+					printf(".PLAYING");
 					drag->xspeed = -(PLAYERSPEED);
 					p=1;					
 					stop_sample(sounds[USSR_ANTH]);
-					play_sample(sounds[USSR_ANTH_R], volume+164, pan, pitch, FALSE);
+					play_sample(sounds[USSR_ANTH_R], volume+64, pan, pitch, FALSE);
 				}
 				if(drag->x<10){//prevents game crash from drag running off screen
 					drag->xspeed=2;
@@ -893,8 +949,8 @@ void handleEnemies(){
 				updateSprite(drag);
 			}else if(drag->xspeed!=0){
 				drag->xspeed=0;
-				//stop_sample(sounds[USSR_ANTH_R]);
-				//play_sample(sounds[USSR_ANTH], volume+50, pan, pitch-500, FALSE);
+				stop_sample(sounds[USSR_ANTH_R]);
+				play_sample(sounds[USSR_ANTH], volume+50, pan, pitch-500, FALSE);
 			}else{//must be on last frame so just stay on it
 				//stop_sample(sounds[USSR_ANTH_R]);				
 			}	
@@ -928,7 +984,7 @@ void winGame(){
 	}else if(mapName == EQUALITY){
 		
 	}else{
-		return -1;
+		return;
 	}	
 	release_screen();
 	while(!gameOn){			
@@ -1062,20 +1118,8 @@ int main(void){
         allegro_message("Error initializing sound system");
         return 1;
     }
-    //load sounds
+    //load sound
     sounds[MUSIC] = load_sample("sounds/title_music.wav");
-    sounds[GRUNT] = load_sample("sounds/male_grunt.wav");
-    sounds[OH_YEAH] = load_sample("sounds/male_oh_yeah.wav");
-    //sounds[LAUGH_FAT] = load_sample("sounds/female_laugh.wav");
-    sounds[HISS] = load_sample("sounds/hiss.wav");
-    sounds[AM_ANTH] = load_sample("sounds/amer_anth.wav");
-    sounds[USSR_ANTH] = load_sample("sounds/ussr_anth.wav");
-    sounds[MURICA] = load_sample("sounds/prime.wav");
-    sounds[SQUIRT] = load_sample("sounds/squirt.wav");
-    sounds[SLUSH] = load_sample("sounds/slush.wav");
-    sounds[LASER] = load_sample("sounds/laser.wav");
-    sounds[USSR_ANTH_R] = load_sample("sounds/ussr_anth_r.wav");
-    sounds[BURP] = load_sample("sounds/burp.wav");
 	printf(".LOADING");
     //create the double buffer
 	buffer = create_bitmap(WIDTH, HEIGHT);
