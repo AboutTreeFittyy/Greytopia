@@ -48,7 +48,7 @@ void loadTradition(){
     prime->framedelay = 12;
     prime->animdir = 1;
     prime->startFrame = 0;
-    prime->health = 200;
+    prime->health = 300;
     prime->alive = 1;
     //load prime robot character sprite
     temp = load_bitmap("images/tradition_bg/snek_larger.bmp", NULL);
@@ -106,12 +106,12 @@ void loadTradition(){
 	sounds[HISS] = load_sample("sounds/hiss.wav");
     sounds[AM_ANTH] = load_sample("sounds/amer_anth.wav");
     sounds[MURICA] = load_sample("sounds/prime.wav");
+    sounds[BURP] = load_sample("sounds/burp.wav");
 	//play music
-	play_sample(sounds[AM_ANTH], volume-50, pan, pitch, FALSE);
+	play_sample(sounds[AM_ANTH], volume-50, pan, pitch, TRUE);
 }
 /*Loads the equality map*/
 void loadEquality(){
-	//printf("1");
 	//load dragon character sprite
     temp = load_bitmap("images/equality_bg/dragon.bmp", NULL);
     for (n=0; n<12; n++){
@@ -135,7 +135,7 @@ void loadEquality(){
     drag->framedelay = 12;
     drag->animdir = 1;
     drag->startFrame = 0;
-    drag->health = 100;
+    drag->health = 300;
     drag->alive = 1;
 	//Load commie enemies
     temp = load_bitmap("images/equality_bg/commie.bmp", NULL);
@@ -145,8 +145,8 @@ void loadEquality(){
     destroy_bitmap(temp);
 	for(n=0;n<COMMIES;n++){
 		commie[n] = malloc(sizeof(SPRITE));
-	    commie[n]->x = 500 + (500*n);
-	    commie[n]->y = 225;
+	    commie[n]->x = 550 + (500*n);
+	    commie[n]->y = 350;
 	    commie[n]->width = commie_image[0]->w;
 	    commie[n]->height = commie_image[0]->h;
 	    commie[n]->xdelay = 1;
@@ -192,14 +192,15 @@ void loadEquality(){
 	}
 	//Load sounds
 	sounds[USSR_ANTH_R] = load_sample("sounds/ussr_anth_r.wav");
-	sounds[USSR_ANTH] = load_sample("sounds/ussr_anth.wav");
+	//sounds[USSR_ANTH] = load_sample("sounds/ussr_anth.wav");//Removed due to corrupt wav file, above one works well anyhow as replacement
+	sounds[PING] = load_sample("sounds/ping.wav");
 	//play music
-	play_sample(sounds[USSR_ANTH], volume-50, pan, pitch, FALSE);
+	play_sample(sounds[USSR_ANTH_R], volume-50, pan, pitch, TRUE);
 }
 /*Loads the sprites into their struct from their bitmap files*/
 void loadLevel(char * map){
 	//Reset in case not first level loaded
-	facing = 0, jump = JUMPIT, s = 0, f = 0, p = 0, firetime = -1, player_anim = 0, pa_start = 0, pa_end = 0;
+	facing = 0, music=0, jump = JUMPIT, s = 0, f = 0, p = 0, firetime = -1, player_anim = 0, pa_start = 0, pa_end = 0;
 	fired = 0, cur_proj = 0;
 	//load the map
 	if(MapLoad(map)){
@@ -207,12 +208,12 @@ void loadLevel(char * map){
 		exit(1);
 	}
 	//Load in sounds for all levels
-	sounds[GRUNT] = load_sample("sounds/male_grunt.wav");
     sounds[OH_YEAH] = load_sample("sounds/male_oh_yeah.wav");
+    sounds[BLEEP] = load_sample("sounds/beep.wav");
     sounds[SQUIRT] = load_sample("sounds/squirt.wav");
     sounds[SLUSH] = load_sample("sounds/slush.wav");
     sounds[LASER] = load_sample("sounds/laser.wav");
-    sounds[BURP] = load_sample("sounds/burp.wav");
+    
 	//Eventually if more levels are built, add a parameter to pass the value for this
 	switch(mapName){
 		case TRADITION: loadTradition();
@@ -307,7 +308,7 @@ int collide(SPRITE *first, SPRITE *second, int border) {
 	}
 	return 0;//no collision return 0
 }
-/*Check collisions for enemy with attack (Snek can't be meleed)*/
+/*Check collisions for enemy with attack (Prime is enabled but melee is really only for fats)*/
 void checkMelee(int x1, int x2, int y1, int y2){
 	j=0;
 	SPRITE *t = malloc(sizeof(SPRITE));
@@ -375,95 +376,122 @@ void checkFire(SPRITE *spr){
 		spr->x = 3900;
 		spr->xspeed=0;
 		play_sample(sounds[SLUSH], volume, pan, pitch, FALSE);
-	}
-	/*Switch on what map playing to see what enemies there are for updating*/
-	switch(mapName){
-		case TRADITION:
-			/*Prime*/
-			//See if hit box is for front or back
-			if(player->x < prime->x && prime->xspeed >0){//player on left side and prime walking to right
-				j = collide(spr, prime, 10);
-			}else if(player->x < prime->x && prime->xspeed <0){//Player on left side and prime walking left
-				tempSprite->x = prime->x+(prime->width/2);
-			    tempSprite->y = prime->y;
-			    tempSprite->width = prime->width/2;
-			    tempSprite->height = prime->height;
-				j = collide(spr, tempSprite, 10);
-			}else if(player->x > prime->x && prime->xspeed >0){//Player on right side and prime walking right
-				tempSprite->x = prime->x;
-			    tempSprite->y = prime->y;
-			    tempSprite->width = prime->width/2;
-			    tempSprite->height = prime->height;
-				j = collide(spr, tempSprite, 10);
-			}else if(player->x > prime->x && prime->xspeed <0){//Player on right side and prime walkiing left
-				j = collide(spr, prime, 10);
-			}
-		    if(j){//Check if collided
-		    	play_sample(sounds[SLUSH], volume, pan, pitch, FALSE);
-				prime->health -= 25;
-		    	if(prime->health <= 0){
-		    		prime->alive = 0;
-				}else{
-					prime->y-=15;//Bounce when hit to let player know damage is dealt
+	}else if(collided(spr->x + spr->width/2, spr->y + spr->height) && spr->xspeed!=0){
+    	spr->y = 600;
+		spr->x = 3900;
+		spr->xspeed=0;
+		play_sample(sounds[SLUSH], volume, pan, pitch, FALSE);
+	}else{
+		/*Switch on what map playing to see what enemies there are for updating*/
+		switch(mapName){
+			case TRADITION:
+				/*Prime*/
+				//See if hit box is for front or back
+				if(player->x < prime->x && prime->xspeed >0){//player on left side and prime walking to right
+					j = collide(spr, prime, 10);
+				}else if(player->x < prime->x && prime->xspeed <0){//Player on left side and prime walking left
+					tempSprite->x = prime->x+(prime->width/2);
+				    tempSprite->y = prime->y;
+				    tempSprite->width = prime->width/2;
+				    tempSprite->height = prime->height;
+					j = collide(spr, tempSprite, 10);
+				}else if(player->x > prime->x && prime->xspeed >0){//Player on right side and prime walking right
+					tempSprite->x = prime->x;
+				    tempSprite->y = prime->y;
+				    tempSprite->width = prime->width/2;
+				    tempSprite->height = prime->height;
+					j = collide(spr, tempSprite, 10);
+				}else if(player->x > prime->x && prime->xspeed <0){//Player on right side and prime walkiing left
+					j = collide(spr, prime, 10);
 				}
-				spr->y = 600;
-				spr->x = 3900;//Get rid of shot so it doesnt hit more than once
-			}
-			j=0;
-			/*Snek*/
-			j = collide(spr, snek, 10);
-		    if(j && snek->alive){//Check if collided
-		    	snek->health -= 25;
-		    	if(snek->health <= 0){
-		    		snek->alive = 0;
-				}else{
-					snek->y-=25;//Bounce when hit to let player know damage is dealt
+			    if(j){//Check if collided
+			    	play_sample(sounds[SLUSH], volume, pan, pitch, FALSE);
+					prime->health -= 25;
+			    	if(prime->health <= 0){
+			    		prime->alive = 0;
+					}else{
+						prime->y-=15;//Bounce when hit to let player know damage is dealt
+					}
+					spr->y = 600;
+					spr->x = 3900;//Get rid of shot so it doesnt hit more than once
 				}
-				spr->y = 600;
-				spr->x = 3900;//Get rid of shot so it doesnt hit more than once
-			}
-			j=0;
+				j=0;
+				/*Snek*/
+				j = collide(spr, snek, 10);
+			    if(j && snek->alive){//Check if collided
+			    	snek->health -= 25;
+			    	if(snek->health <= 0){
+			    		snek->alive = 0;
+					}else{
+						snek->y-=25;//Bounce when hit to let player know damage is dealt
+					}
+					spr->y = 600;
+					spr->x = 3900;//Get rid of shot so it doesnt hit more than once
+				}
+				j=0;
+				break;
+			case EQUALITY:
+				/*DRAGON*/
+				j=0;
+				//See if hit box is for front or back
+				if(player->x < drag->x && drag->xspeed >0){//player on left side and drag walking to right
+					j = collide(spr, drag, 10);
+				}else if(player->x < drag->x && drag->xspeed <0){//Player on left side and drag walking left
+					tempSprite->x = drag->x+(drag->width/2);
+				    tempSprite->y = drag->y;
+				    tempSprite->width = drag->width/2;
+				    tempSprite->height = drag->height;
+					j = collide(spr, tempSprite, 10);
+				}else if(player->x > drag->x && drag->xspeed >0){//Player on right side and drag walking right
+					tempSprite->x = drag->x;
+				    tempSprite->y = drag->y;
+				    tempSprite->width = drag->width/2;
+				    tempSprite->height = drag->height;
+					j = collide(spr, tempSprite, 10);
+				}else if(player->x > drag->x && drag->xspeed <0){//Player on right side and drag walkiing left
+					j = collide(spr, drag, 10);
+				}
+			    if(j){//Check if collided
+			    	play_sample(sounds[SLUSH], volume, pan, pitch, FALSE);
+					drag->health -= 25;
+			    	if(drag->health <= 0){
+			    		drag->alive = 0;
+					}else{
+						drag->y-=15;//Bounce when hit to let player know damage is dealt
+					}
+					spr->y = 600;
+					spr->x = 3900;//Get rid of shot so it doesnt hit more than once
+				}
+				j=0;
+				/*Commies*/
+				for(i=0;i<COMMIES;i++){
+					j = collide(spr, commie[i], 5);
+				    if(j && commie[i]->alive){//Check if collided
+				    	commie[i]->health -= 10;
+				    	if(commie[i]->health <= 0){
+				    		commie[i]->alive = 0;
+						}else{
+							commie[i]->y-=25;//Bounce when hit to let player know damage is dealt
+						}
+						spr->y = 600;
+						spr->x = 3900;//Get rid of shot so it doesnt hit more than once
+					}
+					j=0;
+				}			
 			break;
-		case EQUALITY:
-			/*DRAGON*/
-			j=0;
-			//See if hit box is for front or back
-			if(player->x < drag->x && drag->xspeed >0){//player on left side and drag walking to right
-				j = collide(spr, drag, 10);
-			}else if(player->x < drag->x && drag->xspeed <0){//Player on left side and drag walking left
-				tempSprite->x = drag->x+(drag->width/2);
-			    tempSprite->y = drag->y;
-			    tempSprite->width = drag->width/2;
-			    tempSprite->height = drag->height;
-				j = collide(spr, tempSprite, 10);
-			}else if(player->x > drag->x && drag->xspeed >0){//Player on right side and drag walking right
-				tempSprite->x = drag->x;
-			    tempSprite->y = drag->y;
-			    tempSprite->width = drag->width/2;
-			    tempSprite->height = drag->height;
-				j = collide(spr, tempSprite, 10);
-			}else if(player->x > drag->x && drag->xspeed <0){//Player on right side and drag walkiing left
-				j = collide(spr, drag, 10);
-			}
-		    if(j){//Check if collided
-		    	play_sample(sounds[SLUSH], volume, pan, pitch, FALSE);
-				drag->health -= 25;
-		    	if(drag->health <= 0){
-		    		drag->alive = 0;
-				}else{
-					drag->y-=15;//Bounce when hit to let player know damage is dealt
-				}
-				spr->y = 600;
-				spr->x = 3900;//Get rid of shot so it doesnt hit more than once
-			}
-			j=0;
-		break;
+		}
 	}
 }
 /*Pauses the current game session with options to return to menu*/
 void pauseGame(){
 	//Blit the info screen
-	blit(pause,screen,0,0,WIDTH/2-200,HEIGHT/2-200,400,400);//add image to screen
+	if(mapName == TRADITION){
+		blit(pause_1,screen,0,0,WIDTH/2-200,HEIGHT/2-200,400,400);//add image to screen
+	}else if(mapName == EQUALITY){
+		blit(pause_2,screen,0,0,WIDTH/2-200,HEIGHT/2-200,400,400);//add image to screen
+	}else{
+		return;//Level not found
+	}	
 	release_screen();
 	paused=0;
 	while(!paused){
@@ -486,9 +514,27 @@ void getInput(){
 				stop_sample(sounds[MURICA]);//Could be playing so better safe than sorry
 				break;
 			case EQUALITY:
-				stop_sample(sounds[USSR_ANTH]);
 				stop_sample(sounds[USSR_ANTH_R]);//Could be playing so better safe than sorry
 				break;
+		}
+	}else if (key[KEY_M]){//checks for M press
+        if(key_shifts & KB_CTRL_FLAG){//checks if ctrl is held too
+			if(!music){//music is on so turn off
+	        	music = 1; //mute
+	        	if(mapName == TRADITION){
+	        		stop_sample(sounds[AM_ANTH]);
+				}else if(mapName == EQUALITY){
+					stop_sample(sounds[USSR_ANTH_R]);
+				}
+			}else{//music off so turn on
+				music = 0; //unmute
+		    	if(mapName == TRADITION){
+	        		play_sample(sounds[AM_ANTH], volume-50, pan, pitch, TRUE);
+				}else if(mapName == EQUALITY){
+					play_sample(sounds[USSR_ANTH_R], volume-50, pan, pitch, TRUE);
+				}
+			}
+			rest(250);//add delay so that it doesn't turn music on and off
 		}
 	}
 	if(player->health<=0){//don't allow for control when player dead
@@ -857,8 +903,7 @@ void handleEnemies(){
 					}else if(collide(commie[j], player,  10) && f <=0){
 						f=10;
 						commie[j]->xspeed=-commie[j]->xspeed;
-						stop_sample(sounds[BURP]);
-						play_sample(sounds[BURP], volume, pan, pitch, FALSE);
+						play_sample(sounds[BLEEP], volume, pan, pitch, FALSE);
 						player->health-=10;//player lose health
 						if(commie[j]->xspeed > 0 && player->x > commie[j]->x){//bounce player back to right
 							player->x += 20;
@@ -891,9 +936,9 @@ void handleEnemies(){
 						playAnim(commie[j], 0, 8);
 						f--;
 					}
-					if(commie[j]->x>600 + (500*j)){
+					if(commie[j]->x>700 + (500*j)){
 						commie[j]->xspeed=-2;
-					}else if(commie[j]->x<400 + (500*j)){
+					}else if(commie[j]->x<500 + (500*j)){
 						commie[j]->xspeed=2;
 					}
 					gravity(commie[j]);			
@@ -914,6 +959,12 @@ void handleEnemies(){
 					star[n]->y = 600;
 					star[n]->x = 3900;
 					star[n]->xspeed=0;
+				}else if(collide(star[n], player, 25)){
+					star[n]->y = 600;
+					star[n]->x = 3900;
+					star[n]->xspeed=0;
+					player->health-=10;
+					play_sample(sounds[PING], volume, pan, pitch, FALSE);
 				}
 			}
 			/*Dragon*/
@@ -934,10 +985,9 @@ void handleEnemies(){
 					}
 				}
 				if(player->x>3150 && p!=1){
-					printf(".PLAYING");
 					drag->xspeed = -(PLAYERSPEED);
 					p=1;					
-					stop_sample(sounds[USSR_ANTH]);
+					stop_sample(sounds[USSR_ANTH_R]);
 					play_sample(sounds[USSR_ANTH_R], volume+64, pan, pitch, FALSE);
 				}
 				if(drag->x<10){//prevents game crash from drag running off screen
@@ -950,9 +1000,7 @@ void handleEnemies(){
 			}else if(drag->xspeed!=0){
 				drag->xspeed=0;
 				stop_sample(sounds[USSR_ANTH_R]);
-				play_sample(sounds[USSR_ANTH], volume+50, pan, pitch-500, FALSE);
-			}else{//must be on last frame so just stay on it
-				//stop_sample(sounds[USSR_ANTH_R]);				
+				play_sample(sounds[USSR_ANTH_R], volume+50, pan, pitch-500, FALSE);
 			}	
 			break;
 	}
@@ -982,7 +1030,7 @@ void winGame(){
 	if(mapName == TRADITION){
 		blit(victory_trad,screen,0,0,0,0,640,480);//add image to screen
 	}else if(mapName == EQUALITY){
-		
+		blit(victory_equal,screen,0,0,0,0,640,480);//add image to screen
 	}else{
 		return;
 	}	
@@ -997,7 +1045,6 @@ void winGame(){
 					stop_sample(sounds[MURICA]);//Could be playing so better safe than sorry
 					break;
 				case EQUALITY:
-					stop_sample(sounds[USSR_ANTH]);
 					stop_sample(sounds[USSR_ANTH_R]);//Could be playing so better safe than sorry
 					break;
 			}
@@ -1096,7 +1143,7 @@ void titleLoop(){
 }
 /*Main function, handles initial loading. Passes on taks to be handled in title/game loop functions. When quit, destroys allocated memory.*/
 int main(void){
-    facing = 0, jump = JUMPIT, s = 0, f = 0, p = 0, quit = 0, firetime = -1, player_anim = 0, pa_start = 0, pa_end = 0;
+    facing = 0, jump = JUMPIT, music = 0, s = 0, f = 0, p = 0, quit = 0, firetime = -1, player_anim = 0, pa_start = 0, pa_end = 0;
 	fired = 0, cur_proj = 0, gameOn = 0, selected = 0;
 	tempSprite = malloc(sizeof(SPRITE));
 	allegro_init();	
@@ -1104,9 +1151,11 @@ int main(void){
 	install_keyboard();
 	set_color_depth(16);
 	lose = load_bitmap("images/gameover.bmp", NULL);//Load gameover screen
-	pause = load_bitmap("images/paused.bmp", NULL);//Load game paused screen
+	pause_1 = load_bitmap("images/tradition_bg/pause_trad.bmp", NULL);//Load game paused screen
+	pause_2 = load_bitmap("images/equality_bg/pause_equal.bmp", NULL);//Load game paused screen
 	bar = load_bitmap("images/bottom_bar.bmp", NULL);//Load bottom screen bar
 	victory_trad = load_bitmap("images/tradition_bg/tradition_win.bmp", NULL);//Load victory screen
+	victory_equal = load_bitmap("images/equality_bg/equality_win.bmp", NULL);//Load victory screen
 	title = load_bitmap("images/title_screen.bmp", NULL);//Load title screen
     if(set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0)) {
         printf(".GFX_ERROR: ");
