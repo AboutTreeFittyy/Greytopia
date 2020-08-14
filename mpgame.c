@@ -107,14 +107,15 @@ void loadTradition(){
 }
 /*Loads the equality map*/
 void loadEquality(){
+	//printf("1");
 	//load dragon character sprite
     temp = load_bitmap("images/equality_bg/dragon.bmp", NULL);
-    for (n=0; n<6; n++){
+    for (n=0; n<12; n++){
 		drag_image[n] = grabFrame(temp,575,264,0,0,6,n);
     }
     destroy_bitmap(temp);		
     drag = malloc(sizeof(SPRITE));
-    drag->x = 500;
+    drag->x = 3500;
     drag->y = 0;
     drag->width = drag_image[0]->w;
     drag->height = drag_image[0]->h;
@@ -130,8 +131,67 @@ void loadEquality(){
     drag->framedelay = 12;
     drag->animdir = 1;
     drag->startFrame = 0;
-    drag->health = 500;
+    drag->health = 100;
     drag->alive = 1;
+    //printf("1");
+	//Load commie enemies
+    temp = load_bitmap("images/equality_bg/commie.bmp", NULL);
+    //printf("2");
+    for (n=0; n<14; n++){
+		//printf("H%d",n);
+		commie_image[n] = grabFrame(temp,45,59,0,0,9,n);
+    }
+    //printf("3");
+    destroy_bitmap(temp);
+	for(n=0;n<COMMIES;n++){
+		commie[n] = malloc(sizeof(SPRITE));
+	    commie[n]->x = 500 + (500*n);
+	    commie[n]->y = 225;
+	    commie[n]->width = commie_image[0]->w;
+	    commie[n]->height = commie_image[0]->h;
+	    commie[n]->xdelay = 1;
+	    commie[n]->ydelay = 0;
+	    commie[n]->xcount = 0;
+	    commie[n]->ycount = 0;
+	    commie[n]->xspeed = -2;
+	    commie[n]->yspeed = 0;
+	    commie[n]->curframe = 0;
+	    commie[n]->maxframe = 8;
+	    commie[n]->framecount = 0;
+	    commie[n]->framedelay = 4;
+	    commie[n]->animdir = 1;
+	    commie[n]->dir = n*NUMPROJ;//Keep track of projectiles
+	    commie[n]->cnt = 0;
+	    commie[n]->startFrame = 0;
+	    commie[n]->health = 100;
+	    commie[n]->alive = 1;
+	    //create their bullets
+	    temp = load_bitmap("images/equality_bg/star.bmp", NULL);
+	    star_image = grabFrame(temp,8,8,0,0,1,0);
+	    destroy_bitmap(temp);		
+	    for(j=n*NUMPROJ;j<(n+1)*NUMPROJ;j++){
+			star[j] = malloc(sizeof(SPRITE));
+		    star[j]->x = 3900;
+		    star[j]->y = 600;
+		    star[j]->width = star_image->w;
+		    star[j]->height = star_image->h;
+		    star[j]->xdelay = 1;
+		    star[j]->ydelay = 0;
+		    star[j]->xcount = 0;
+		    star[j]->ycount = 0;
+		    star[j]->xspeed = 0;
+		    star[j]->yspeed = 0;
+		    star[j]->curframe = 0;
+		    star[j]->maxframe = 0;
+		    star[j]->framecount = 0;
+		    star[j]->framedelay = 12;
+		    star[j]->animdir = 0;
+		    star[j]->startFrame = 0;
+		    star[j]->alive = 1;
+		}
+	}
+	//play music
+	play_sample(sounds[USSR_ANTH], volume-50, pan, pitch, FALSE);
 }
 /*Loads the sprites into their struct from their bitmap files*/
 void loadLevel(char * map){
@@ -141,9 +201,10 @@ void loadLevel(char * map){
 		exit(1);
 	}
 	//Eventually if more levels are built, add a parameter to pass the value for this
-	mapName = TRADITION;
 	switch(mapName){
 		case TRADITION: loadTradition();
+		break;
+		case EQUALITY: loadEquality();
 		break;
 	}
 	//load vlad playable character sprite
@@ -602,8 +663,18 @@ void drawSprites(){
 			}		
 			break;
 		case EQUALITY:
-			testDrawSide(drag, drag_image);	
-			break;
+			if(drag->xspeed>0){//See what direction moving
+				draw_sprite_h_flip(buffer, drag_image[drag->curframe], (drag->x-mapxoff), (drag->y-mapyoff+1));
+			}else{				
+				draw_sprite(buffer, drag_image[drag->curframe], (drag->x-mapxoff), (drag->y-mapyoff+1));
+			}
+			for(j=0;j<COMMIES;j++){
+				testDrawSide(commie[j], commie_image);
+			}
+			for(j=0;j<COMMIES*NUMPROJ;j++){
+				draw_sprite(buffer, star_image, (star[j]->x-mapxoff), (star[j]->y-mapyoff+1));
+			}
+			break;			
 	}
 }
 /*Adds gravity to sprite, stopping when colliding with blocks*/
@@ -731,8 +802,102 @@ void handleEnemies(){
 			}			
 			break;
 		case EQUALITY:
-			playAnim(drag, 0, 5);
-			updateSprite(drag);
+			/*Commies*/
+			for(j=0;j<COMMIES;j++){
+				if(commie[j]->curframe != 13){//Last frame after dead, stay on it when dead					
+					if(!commie[j]->alive){//He's dead so play the death animation
+						playAnim(commie[j], 9, 13);
+					}else if(collide(commie[j], player,  10) && f <=0){
+						f=10;
+						commie[j]->xspeed=-commie[j]->xspeed;
+						stop_sample(sounds[BURP]);
+						play_sample(sounds[BURP], volume, pan, pitch, FALSE);
+						player->health-=10;//player lose health
+						if(commie[j]->xspeed > 0 && player->x > commie[j]->x){//bounce player back to right
+							player->x += 20;
+						}else if(commie[j]->xspeed > 0 && player->x < commie[j]->x){//bounce player back to left
+							player->x -= 20;
+						}else if(commie[j]->xspeed < 0 && player->x < commie[j]->x){//bounce player back to left
+							player->x -= 20;
+						}else{//bounce player back to left
+							player->x += 20;
+						}
+					}else{//no collision just keep animating and try to fire
+						if(commie[j]->cnt >40){//Check if enough frames gone by to fire
+							commie[j]->cnt=0;
+							if(commie[j]->dir>=(j*NUMPROJ+NUMPROJ)){//Reset projectile list to restart using projectiles from bottom
+								commie[j]->dir=j*NUMPROJ;
+							}
+							//Fire current dir
+							if(commie[j]->xspeed > 0){//moving right so fire right
+								star[commie[j]->dir]->x=commie[j]->x+commie[j]->width;
+								star[commie[j]->dir]->xspeed=3;
+							}else{//moving left fire left
+								star[commie[j]->dir]->x=commie[j]->x;
+								star[commie[j]->dir]->xspeed=-3;
+							}
+							star[commie[j]->dir]->y=commie[j]->y;
+							commie[j]->dir++;
+						}else{
+							commie[j]->cnt++;
+						}
+						playAnim(commie[j], 0, 8);
+						f--;
+					}
+					if(commie[j]->x>600 + (500*j)){
+						commie[j]->xspeed=-2;
+					}else if(commie[j]->x<400 + (500*j)){
+						commie[j]->xspeed=2;
+					}
+					gravity(commie[j]);			
+					updateSprite(commie[j]);
+				}else{//must be on last frame so just stay on it
+					commie[j]->xspeed=0;
+				}
+			}	
+			/*Now just to Update the bullets*/
+			for(n=0;n<NUMPROJ*COMMIES;n++){//Update the enemy projectiles
+				//gravity(star[n]);
+				updateSprite(star[n]);
+				//checkFire(star[n]);//Check for collisions with enemies
+			}
+			/*Dragon*/
+			if(drag->curframe != 11){//Last frame after dead, stay on it when dead
+				if(!drag->alive){//He's dead so play the death animation
+					playAnim(drag, 6, 11);
+				}else if(collide(player, drag, 10)){
+					player->health-=10;//player lose health
+					//play_sample(sounds[LASER], volume, pan, pitch, FALSE);
+					if(drag->xspeed > 0 && player->x > drag->x){//bounce player back to right
+						player->x += 30;
+					}else if(drag->xspeed > 0 && player->x < drag->x){//bounce player back to left
+						player->x -= 30;
+					}else if(drag->xspeed < 0 && player->x < drag->x){//bounce player back to left
+						player->x -= 30;
+					}else{//bounce player back to left
+						player->x += 30;
+					}
+				}
+				if(player->x>3150 && p!=1){
+					drag->xspeed = -(PLAYERSPEED);
+					p=1;					
+					stop_sample(sounds[USSR_ANTH]);
+					play_sample(sounds[USSR_ANTH_R], volume+164, pan, pitch, FALSE);
+				}
+				if(drag->x<10){//prevents game crash from drag running off screen
+					drag->xspeed=2;
+				}else if(drag->x> 3700){
+					drag->xspeed=-2;
+				}
+				gravity(drag);
+				updateSprite(drag);
+			}else if(drag->xspeed!=0){
+				drag->xspeed=0;
+				//stop_sample(sounds[USSR_ANTH_R]);
+				//play_sample(sounds[USSR_ANTH], volume+50, pan, pitch-500, FALSE);
+			}else{//must be on last frame so just stay on it
+				//stop_sample(sounds[USSR_ANTH_R]);				
+			}	
 			break;
 	}
 }
@@ -853,8 +1018,15 @@ void titleLoop(){
 					selected=1;
 					gameOn=1;
 				}else if(key[KEY_1]){
+					mapName=TRADITION;
 					loadLevel("images/tradition_bg/map.FMP");
-					printf(".LOADED");
+					printf(".LOADED_TRADITION");					
+					stop_sample(sounds[MUSIC]);//stop title music so it doesnt interfere with level theme
+					selected=1;//just break this loop to start gameloop
+				}else if(key[KEY_2]){
+					mapName=EQUALITY;
+					loadLevel("images/equality_bg/equality.FMP");
+					printf(".LOADED_EQUALITY");					
 					stop_sample(sounds[MUSIC]);//stop title music so it doesnt interfere with level theme
 					selected=1;//just break this loop to start gameloop
 				}

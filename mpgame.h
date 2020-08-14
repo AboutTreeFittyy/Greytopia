@@ -14,6 +14,7 @@
 #define PLAYERSPEED 4
 #define NUMPROJ 6
 #define FATS 3
+#define COMMIES 4
 #define TRADITION 0
 #define EQUALITY 1
 #define MUSIC 0
@@ -32,7 +33,7 @@
 #define TEXTCOLOUR makecol(0,0,51)
 //define the structure of the sprite
 typedef struct SPRITE{
-    int dir, alive, health;
+    int dir, cnt, alive, health;
     int x,y;
     int width,height;
     int xspeed,yspeed;
@@ -60,15 +61,19 @@ BITMAP *player_image[40];
 BITMAP *prime_image[12];
 BITMAP *snek_image[12];
 BITMAP *fat_image[24];
-BITMAP *drag_image[6];
+BITMAP *commie_image[14];
+BITMAP *drag_image[12];
 BITMAP *paint_image;
+BITMAP *star_image;
 BITMAP *temp;
 BITMAP *buffer;	
 SPRITE *tempSprite;
 SPRITE *proj_paint[6];//player projectiles
+SPRITE *star[COMMIES*NUMPROJ];//Enemy projectiles
 SPRITE *player;
 SPRITE *snek;//Tradition enemies
 SPRITE *fat[FATS];
+SPRITE *commie[COMMIES];
 SPRITE *prime;
 SPRITE *drag;//Equality Enemies
 
