@@ -1,8 +1,16 @@
+/*File Name: mpgame.c
+ *Author: Mathew Boland (Some functions obtained from "Game Programming All in One, 3rd Edition
+ *by Jonathon S. Harbour. (Citation by functions as "Harbour")
+ *Last Updated: August 14, 2020
+ *Project: Greytopia
+ *Version: 1.0
+*/
+
 #include <stdio.h>
 #include <allegro.h>
 #include "mappyal.h"
 #include "mpgame.h"
-/*tile grabber*/
+/*tile grabber "Harbour"*/
 BITMAP *grabFrame(BITMAP *source, int width, int height, int startx, int starty, int columns, int frame){
     BITMAP *temp = create_bitmap(width,height);
     int x = startx + (frame % columns) * width;
@@ -10,7 +18,7 @@ BITMAP *grabFrame(BITMAP *source, int width, int height, int startx, int starty,
     blit(source,temp,x,y,0,0,width,height);
     return temp;
 }
-//Turns on an animation specified for the given sprite
+//Turns on an animation specified for the given sprite "Harbour"
 void playAnim(SPRITE *spr, int start, int endFrame){
     //make sure animation not already in progress
     if(spr->startFrame != start ||  spr->animdir ==  0){
@@ -194,8 +202,7 @@ void loadEquality(){
 	sounds[USSR_ANTH_R] = load_sample("sounds/ussr_anth_r.wav");
 	//sounds[USSR_ANTH] = load_sample("sounds/ussr_anth.wav");//Removed due to corrupt wav file, above one works well anyhow as replacement
 	sounds[PING] = load_sample("sounds/ping.wav");
-	//play music
-	play_sample(sounds[USSR_ANTH_R], volume-50, pan, pitch, TRUE);
+	play_sample(sounds[USSR_ANTH_R], volume-50, pan, pitch, TRUE);	//play music
 }
 /*Loads the sprites into their struct from their bitmap files*/
 void loadLevel(char * map){
@@ -212,8 +219,7 @@ void loadLevel(char * map){
     sounds[BLEEP] = load_sample("sounds/beep.wav");
     sounds[SQUIRT] = load_sample("sounds/squirt.wav");
     sounds[SLUSH] = load_sample("sounds/slush.wav");
-    sounds[LASER] = load_sample("sounds/laser.wav");
-    
+    sounds[LASER] = load_sample("sounds/laser.wav");    
 	//Eventually if more levels are built, add a parameter to pass the value for this
 	switch(mapName){
 		case TRADITION: loadTradition();
@@ -271,22 +277,21 @@ void loadLevel(char * map){
 	    proj_paint[n]->alive = 1;
 	}
 }
-/*Collision function for with blocks*/
+/*Collision function for with blocks "Harbour"*/
 int collided(int x, int y){
 	BLKSTR *blockdata;
 	blockdata = MapGetBlock(x/mapblockwidth, y/mapblockheight);	
 	return blockdata->tl;
 }
-//checks if coordinates are inside a given hitbox, return 1 if inside
-int inside(int x,int y,int left,int top,int right,int bottom) {
+//checks if coordinates are inside a given hitbox, return 1 if inside "Harbour"
+int inside(int x,int y,int left,int top,int right,int bottom){
 	if (x > left && x < right && y > top && y < bottom){
 		return 1;
-	}
-	else{
+	}else{
 		return 0;
 	}
 }
-//checks two sprites for collisions
+//checks two sprites for collisions "Harbour"
 int collide(SPRITE *first, SPRITE *second, int border) {
 	//get width/height of both sprites 
 	int width1 = first->x + first->width; 
@@ -316,7 +321,7 @@ void checkMelee(int x1, int x2, int y1, int y2){
     tempSprite->y = y1;
     tempSprite->width = x2 - x1;
     tempSprite->height = y1 - y2;
-	switch(mapName){
+	switch(mapName){//Didn't really see a point in having this for equality level enemies
 		case TRADITION:			
 		    /*Prime*/
 			//See if hit box is for front or back
@@ -376,7 +381,7 @@ void checkFire(SPRITE *spr){
 		spr->x = 3900;
 		spr->xspeed=0;
 		play_sample(sounds[SLUSH], volume, pan, pitch, FALSE);
-	}else if(collided(spr->x + spr->width/2, spr->y + spr->height) && spr->xspeed!=0){
+	}else if(collided(spr->x + spr->width/2, spr->y + spr->height) && spr->xspeed!=0){//Hit ground
     	spr->y = 600;
 		spr->x = 3900;
 		spr->xspeed=0;
@@ -669,7 +674,7 @@ void getInput(){
         } 
     }
 }
-//Moves map around
+//Moves map around "Harbour"
 void updateMap(){
 	//update the map scroll position
 	mapxoff = player->x + player->width/2 - WIDTH/2 + 10;
@@ -692,7 +697,7 @@ void updateMap(){
     //draw foreground tiles
 	MapDrawFG(buffer, mapxoff, mapyoff, 0, 0, WIDTH-1, HEIGHT-1, 0);
 }
-//updates the properties of the specified sprite
+//updates the properties of the specified sprite "Harbour"
 void updateSprite(SPRITE *spr){
     //update x position
     if (++spr->xcount > spr->xdelay){
@@ -1056,28 +1061,21 @@ void gameLoop(){
     if(keypressed()){ //Get keyboard input when key(s) pressed
     	getInput();
 	}  
-	//printf(".1");  
 	oldpy = player->y; 
     oldpx = player->x;
 	updateSprite(player);//Update player sprite
-	//printf(".1-2");
 	for(n=0;n<NUMPROJ;n++){//Update the player projectiles
 		gravity(proj_paint[n]);
 		updateSprite(proj_paint[n]);
-		//printf(".1-3");
 		checkFire(proj_paint[n]);//Check for collisions with enemies
 	}	
-	//printf(".2");
 	handleEnemies();//Update enemies
-	//printf(".2-1");
 	if(player->curframe == pa_end){//Turn off animation that finished
 		player_anim = 0;
 		player->animdir=0;
 	}	
-	//printf(".3");	
     updateMap();
     drawSprites();
-    //printf(".4");
     /*Prevent player from walking through walls, need to hit top and bottom of player so can still walk through platforms*/
     if(collided(player->x + player->width/2, player->y + player->height) && collided(player->x + player->width/2, player->y + player->height/2)){//right side hit wall and trying to move through it
     	if(player->xspeed > 0){//right side hit wall and trying to move through it
@@ -1097,14 +1095,11 @@ void gameLoop(){
 	}
     //blit the double buffer 
 	vsync();
-	//printf(".5");
     acquire_screen();
-    //printf(".6");
 	blit(buffer, screen, 0, 0, 0, 0, WIDTH-1, HEIGHT-1);
 	blit(bar,screen,0,0,0,HEIGHT-48,640,48);//add bottom bar to screen
 	textprintf_centre_ex(screen,font,320,HEIGHT-24,TEXTCOLOUR,-1,"HEALTH: %d", player->health);
 	//write info to bar
-	//printf(".7");
     release_screen();
 }
 /*Loop used during title screen, handles selection/progression to gameloop or exiting application*/
@@ -1122,19 +1117,19 @@ void titleLoop(){
 					gameOn=1;
 				}else if(key[KEY_1]){
 					mapName=TRADITION;
-					loadLevel("images/tradition_bg/map.FMP");
-					printf(".LOADED_TRADITION");					
+					loadLevel("images/tradition_bg/map.FMP");					
 					stop_sample(sounds[MUSIC]);//stop title music so it doesnt interfere with level theme
 					selected=1;//just break this loop to start gameloop
 				}else if(key[KEY_2]){
 					mapName=EQUALITY;
-					loadLevel("images/equality_bg/equality.FMP");
-					printf(".LOADED_EQUALITY");					
+					loadLevel("images/equality_bg/equality.FMP");				
 					stop_sample(sounds[MUSIC]);//stop title music so it doesnt interfere with level theme
 					selected=1;//just break this loop to start gameloop
 				}
 			}
-			gameLoop();//Plays the game
+			if(!quit){//Prevents crashing on exit without playing (since loading with no selection would crash)
+				gameLoop();//Plays the game
+			}			
 		}//Reset
 		selected=0;
 		gameOn=0;
@@ -1150,6 +1145,7 @@ int main(void){
 	install_timer();
 	install_keyboard();
 	set_color_depth(16);
+	//Loading in all bitmap image assets
 	lose = load_bitmap("images/gameover.bmp", NULL);//Load gameover screen
 	pause_1 = load_bitmap("images/tradition_bg/pause_trad.bmp", NULL);//Load game paused screen
 	pause_2 = load_bitmap("images/equality_bg/pause_equal.bmp", NULL);//Load game paused screen
@@ -1157,38 +1153,73 @@ int main(void){
 	victory_trad = load_bitmap("images/tradition_bg/tradition_win.bmp", NULL);//Load victory screen
 	victory_equal = load_bitmap("images/equality_bg/equality_win.bmp", NULL);//Load victory screen
 	title = load_bitmap("images/title_screen.bmp", NULL);//Load title screen
-    if(set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0)) {
+    if(set_gfx_mode(MODE, WIDTH, HEIGHT, 0, 0)) {//Set GFX and see if error returned or good to go
         printf(".GFX_ERROR: ");
 		allegro_message(allegro_error);
         return;
     }
-    //install sound
-    if (install_sound(DIGI_AUTODETECT, MIDI_NONE, "")){
+    if (install_sound(DIGI_AUTODETECT, MIDI_NONE, "")){//install sound
         allegro_message("Error initializing sound system");
         return 1;
     }
-    //load sound
-    sounds[MUSIC] = load_sample("sounds/title_music.wav");
-	printf(".LOADING");
+    sounds[MUSIC] = load_sample("sounds/title_music.wav");//Load this for the menu, rest load later
     //create the double buffer
 	buffer = create_bitmap(WIDTH, HEIGHT);
 	clear(buffer);
-    //master loop
-	while(!quit){		
+	while(!quit){//Master loop, ends on ESC	
 		titleLoop();//Plays the game
-	} //while
+	}
 	//Cleanup
-	printf(".CLEANING");
-    for (n=0; n<8; n++){
-    	destroy_bitmap(player_image[n]);
-	}        
+    //Destroying sprites
     free(player);
     free(prime);
     free(snek);
+    free(drag);
+    free(tempSprite);
+    for(n=0; n<NUMPROJ; n++){
+    	free(proj_paint[n]);
+	}
+	for(n=0;n<FATS;n++){
+		free(fat[n]);
+	}
+	for(n=0;n<COMMIES;n++){
+		free(commie[n]);
+	}
+	for(n=0;n<COMMIES*NUMPROJ;n++){
+		free(star[n]);
+	}
+	//destroying bitmaps
+	for (n=0; n<40; n++){
+    	destroy_bitmap(player_image[n]);
+	}  
+	for (n=0; n<12; n++){
+    	destroy_bitmap(drag_image[n]);
+	}  
+	for (n=0; n<14; n++){
+    	destroy_bitmap(commie_image[n]);
+	}  
+	for (n=0; n<24; n++){
+    	destroy_bitmap(fat_image[n]);
+	}  
+	for (n=0; n<12; n++){
+    	destroy_bitmap(snek_image[n]);
+	}  
+	for (n=0; n<12; n++){
+    	destroy_bitmap(prime_image[n]);
+	}  	
+	destroy_bitmap(paint_image);
+	destroy_bitmap(star_image);
+    destroy_bitmap(lose);
+    destroy_bitmap(pause_1);
+    destroy_bitmap(pause_2);
+    destroy_bitmap(bar);
+    destroy_bitmap(victory_trad);
+    destroy_bitmap(victory_equal);
+    destroy_bitmap(title);    
 	destroy_bitmap(buffer);
-	MapFreeMem ();
+	MapFreeMem();
 	printf(".CLEANED");
-	allegro_exit();
+	allegro_exit();//Cleans more like sounds
 	return 0;
 }
 END_OF_MAIN()

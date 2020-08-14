@@ -1,7 +1,9 @@
-/* Allegro datafile object indexes, produced by grabber v3.11 (beta) */
-/* Datafile: c:\cprog\mappy\mpgame.dat */
-/* Date: Sat Mar  6 19:03:06 1999 */
-/* Do not hand edit! */
+/*File Name: mpgame.h
+ *Author: Mathew Boland
+ *Last Updated: August 14, 2020
+ *Project: Greytopia
+ *Version: 1.0
+*/
 
 #define GAMEMAP                          0        /* FMP  */
 #define GAMEPAL                          1        /* PAL  */
@@ -52,7 +54,6 @@ int volume = 128;
 int pan = 128;
 int pitch = 1000;
 //Art/sprite variables
-BITMAP *intro;
 BITMAP *bar;
 BITMAP *title;
 BITMAP *lose;
@@ -72,13 +73,13 @@ BITMAP *temp;
 BITMAP *buffer;	
 SPRITE *tempSprite;
 SPRITE *proj_paint[6];//player projectiles
-SPRITE *star[COMMIES*NUMPROJ];//Enemy projectiles
 SPRITE *player;
 SPRITE *snek;//Tradition enemies
 SPRITE *fat[FATS];
-SPRITE *commie[COMMIES];
 SPRITE *prime;
 SPRITE *drag;//Equality Enemies
+SPRITE *commie[COMMIES];
+SPRITE *star[COMMIES*NUMPROJ];//Enemy projectiles
 
 //Integer variables
 int c, n, i, f, j, s, p; //index numbers
