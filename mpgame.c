@@ -1162,6 +1162,15 @@ int main(void){
         allegro_message("Error initializing sound system");
         return 1;
     }
+    /*Create splash screen and display*/
+    splash = load_bitmap("images/splash.bmp", NULL);//Load title screen
+    blit(splash,screen,0,0,0,0,640,480);
+	while(!quit){
+		if(key[KEY_SPACE]){//Proceed to game after space pressed
+			quit = 1;
+		}
+	}
+	quit = 0;//Reset global variable	
     sounds[MUSIC] = load_sample("sounds/title_music.wav");//Load this for the menu, rest load later
     //create the double buffer
 	buffer = create_bitmap(WIDTH, HEIGHT);
@@ -1212,13 +1221,13 @@ int main(void){
     destroy_bitmap(lose);
     destroy_bitmap(pause_1);
     destroy_bitmap(pause_2);
+    destroy_bitmap(splash);
     destroy_bitmap(bar);
     destroy_bitmap(victory_trad);
     destroy_bitmap(victory_equal);
     destroy_bitmap(title);    
 	destroy_bitmap(buffer);
 	MapFreeMem();
-	printf(".CLEANED");
 	allegro_exit();//Cleans more like sounds
 	return 0;
 }

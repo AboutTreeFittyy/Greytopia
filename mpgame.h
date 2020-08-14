@@ -61,6 +61,7 @@ BITMAP *victory_trad;
 BITMAP *victory_equal;
 BITMAP *pause_1;
 BITMAP *pause_2;
+BITMAP *splash;
 BITMAP *player_image[40];
 BITMAP *prime_image[12];
 BITMAP *snek_image[12];
