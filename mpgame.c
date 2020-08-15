@@ -34,7 +34,7 @@ void playAnim(SPRITE *spr, int start, int endFrame){
 /*Loads in the tradition level assets*/
 void loadTradition(){
 	//load prime robot character sprite
-    temp = load_bitmap("images/tradition_bg/chad_prime.bmp", NULL);
+    temp = load_bitmap("images/tradition_bg/prime.bmp", NULL);
     for (n=0; n<12; n++){
 		prime_image[n] = grabFrame(temp,256,256,0,0,4,n);
     }
@@ -59,7 +59,7 @@ void loadTradition(){
     prime->health = 300;
     prime->alive = 1;
     //load prime robot character sprite
-    temp = load_bitmap("images/tradition_bg/snek_larger.bmp", NULL);
+    temp = load_bitmap("images/tradition_bg/snek.bmp", NULL);
     for (n=0; n<12; n++){
 		snek_image[n] = grabFrame(temp,256,256,0,0,4,n);
     }
@@ -199,7 +199,7 @@ void loadEquality(){
 		}
 	}
 	//Load sounds
-	sounds[USSR_ANTH_R] = load_sample("sounds/ussr_anth_r.wav");
+	sounds[USSR_ANTH_R] = load_sample("sounds/ussr_anth.wav");
 	//sounds[USSR_ANTH] = load_sample("sounds/ussr_anth.wav");//Removed due to corrupt wav file, above one works well anyhow as replacement
 	sounds[PING] = load_sample("sounds/ping.wav");
 	play_sample(sounds[USSR_ANTH_R], volume-50, pan, pitch, TRUE);	//play music
@@ -528,15 +528,30 @@ void getInput(){
 	        	music = 1; //mute
 	        	if(mapName == TRADITION){
 	        		stop_sample(sounds[AM_ANTH]);
+					if(p && prime->health>0){//Check  if prime sound
+	        			stop_sample(sounds[MURICA]);
+					}	        		
 				}else if(mapName == EQUALITY){
 					stop_sample(sounds[USSR_ANTH_R]);
 				}
 			}else{//music off so turn on
 				music = 0; //unmute
 		    	if(mapName == TRADITION){
-	        		play_sample(sounds[AM_ANTH], volume-50, pan, pitch, TRUE);
+	        		if(p && prime->health>0){//Check  if prime sound
+	        			play_sample(sounds[MURICA], volume-50, pan, pitch, TRUE);
+					}else if(p){//Boss defeated so play game over music
+						play_sample(sounds[AM_ANTH], volume+50, pan, pitch-500, TRUE);
+					}else{
+						play_sample(sounds[AM_ANTH], volume-50, pan, pitch, TRUE);
+					}
 				}else if(mapName == EQUALITY){
-					play_sample(sounds[USSR_ANTH_R], volume-50, pan, pitch, TRUE);
+					if(p && drag->health>0){//Check  if drag sound
+	        			play_sample(sounds[USSR_ANTH_R], volume+164, pan, pitch, TRUE);
+					}else if(p){//Boss defeated so play game over music
+						play_sample(sounds[USSR_ANTH_R], volume+50, pan, pitch-500, TRUE);
+					}else{
+						play_sample(sounds[USSR_ANTH_R], volume-50, pan, pitch, FALSE);
+					}
 				}
 			}
 			rest(250);//add delay so that it doesn't turn music on and off
@@ -807,7 +822,9 @@ void handleEnemies(){
 				if(player->x>3150 && p!=1){
 					prime->xspeed = -(PLAYERSPEED);
 					p=1;					
-					play_sample(sounds[MURICA], volume+164, pan, pitch, FALSE);
+					if(!music){//Only play if music is playing
+						play_sample(sounds[MURICA], volume-50, pan, pitch, TRUE);
+					}
 				}
 				if(prime->x<10){//prevents game crash from prime running off screen
 					prime->xspeed=2;
@@ -819,7 +836,9 @@ void handleEnemies(){
 			}else if(prime->xspeed!=0){
 				prime->xspeed=0;
 				stop_sample(sounds[AM_ANTH]);
-				play_sample(sounds[AM_ANTH], volume+50, pan, pitch-500, FALSE);
+				if(!music){//Only play if music is playing
+					play_sample(sounds[AM_ANTH], volume+50, pan, pitch-500, FALSE);
+				}
 			}else{//must be on last frame so just stay on it
 				stop_sample(sounds[MURICA]);				
 			}	
@@ -993,7 +1012,9 @@ void handleEnemies(){
 					drag->xspeed = -(PLAYERSPEED);
 					p=1;					
 					stop_sample(sounds[USSR_ANTH_R]);
-					play_sample(sounds[USSR_ANTH_R], volume+64, pan, pitch, FALSE);
+					if(!music){//Only play if music is playing
+						play_sample(sounds[USSR_ANTH_R], volume+164, pan, pitch, FALSE);
+					}
 				}
 				if(drag->x<10){//prevents game crash from drag running off screen
 					drag->xspeed=2;
@@ -1005,7 +1026,9 @@ void handleEnemies(){
 			}else if(drag->xspeed!=0){
 				drag->xspeed=0;
 				stop_sample(sounds[USSR_ANTH_R]);
-				play_sample(sounds[USSR_ANTH_R], volume+50, pan, pitch-500, FALSE);
+				if(!music){//Only play if music is playing
+					play_sample(sounds[USSR_ANTH_R], volume+50, pan, pitch-500, FALSE);
+				}
 			}	
 			break;
 	}
@@ -1021,10 +1044,20 @@ void endGame(){
 		//Blit the info screen
 		blit(lose,screen,0,0,WIDTH/2-128,HEIGHT/2-128,256,256);//add image to screen
 		release_screen();
-		while(!quit){			
+		while(!gameOn){			
 			//Check for quit game
 			if(key[KEY_ESC]){
-				quit = 1;
+				//Turn off music for level
+				switch(mapName){
+					case TRADITION:
+						stop_sample(sounds[AM_ANTH]);
+						stop_sample(sounds[MURICA]);//Could be playing so better safe than sorry
+						break;
+					case EQUALITY:
+						stop_sample(sounds[USSR_ANTH_R]);//Could be playing so better safe than sorry
+						break;
+				}//Set up global variables for game exit	
+				gameOn = 1;			
 			}
 		}
 	}
@@ -1090,7 +1123,7 @@ void gameLoop(){
 	if(player->health <= 0){
 		endGame();
 	}
-	if(player->x>3800){
+	if(player->x>3800){//See if level end reached
 		winGame();
 	}
     //blit the double buffer 
@@ -1117,7 +1150,7 @@ void titleLoop(){
 					gameOn=1;
 				}else if(key[KEY_1]){
 					mapName=TRADITION;
-					loadLevel("images/tradition_bg/map.FMP");					
+					loadLevel("images/tradition_bg/tradition.FMP");					
 					stop_sample(sounds[MUSIC]);//stop title music so it doesnt interfere with level theme
 					selected=1;//just break this loop to start gameloop
 				}else if(key[KEY_2]){

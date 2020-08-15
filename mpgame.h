@@ -20,19 +20,17 @@
 #define TRADITION 0
 #define EQUALITY 1
 #define MUSIC 0
-
-#define OH_YEAH 2
-#define BLEEP 3
-#define HISS 4
-#define AM_ANTH 5
-
-#define MURICA 7
-#define SQUIRT 8
-#define SLUSH 9
-#define LASER 10
-#define USSR_ANTH_R 11
-#define BURP 12
-#define PING 13
+#define OH_YEAH 1
+#define BLEEP 2
+#define HISS 3
+#define AM_ANTH 4
+#define MURICA 5
+#define SQUIRT 6
+#define SLUSH 7
+#define LASER 8
+#define USSR_ANTH_R 9
+#define BURP 10
+#define PING 11
 #define TEXTCOLOUR makecol(0,0,51)
 //define the structure of the sprite
 typedef struct SPRITE{
@@ -49,7 +47,7 @@ typedef struct SPRITE{
 
 /***Global variables***/
 //Sound
-SAMPLE *sounds[14];
+SAMPLE *sounds[12];
 int volume = 128;
 int pan = 128;
 int pitch = 1000;
